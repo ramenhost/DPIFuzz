@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/mpiraux/pigotls"
 	"log"
 	"net"
 	"os"
@@ -13,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"unsafe"
+
+	"github.com/mpiraux/pigotls"
 )
 
 type Connection struct {
@@ -22,20 +23,20 @@ type Connection struct {
 	Host          *net.UDPAddr
 	InterfaceMTU  int
 
-	Tls           *pigotls.Connection
-	TLSTPHandler  *TLSTransportParameterHandler
+	Tls          *pigotls.Connection
+	TLSTPHandler *TLSTransportParameterHandler
 
 	KeyPhaseIndex  uint
-	SpinBit   	   SpinBit
+	SpinBit        SpinBit
 	LastSpinNumber PacketNumber
 
-	CryptoStates   map[EncryptionLevel]*CryptoState
+	CryptoStates map[EncryptionLevel]*CryptoState
 
 	ReceivedPacketHandler func([]byte, unsafe.Pointer)
 	SentPacketHandler     func([]byte, unsafe.Pointer)
 
-	CryptoStreams       CryptoStreams  // TODO: It should be a parent class without closing states
-	Streams             Streams
+	CryptoStreams CryptoStreams // TODO: It should be a parent class without closing states
+	Streams       Streams
 
 	IncomingPackets     Broadcaster //type: Packet
 	OutgoingPackets     Broadcaster //type: Packet
@@ -45,14 +46,14 @@ type Connection struct {
 	FrameQueue          Broadcaster //type: QueuedFrame
 	TransportParameters Broadcaster //type: QuicTransportParameters
 
-	PreparePacket 			  Broadcaster //type: EncryptionLevel
-	SendPacket 			      Broadcaster //type: PacketToSend
-	StreamInput               Broadcaster //type: StreamInput
-	PacketAcknowledged        Broadcaster //type: PacketAcknowledged
+	PreparePacket      Broadcaster //type: EncryptionLevel
+	SendPacket         Broadcaster //type: PacketToSend
+	StreamInput        Broadcaster //type: StreamInput
+	PacketAcknowledged Broadcaster //type: PacketAcknowledged
 
-	ConnectionClosed 		  chan bool
-	ConnectionRestart 	  	  chan bool // Triggered when receiving a Retry or a VN packet
-	ConnectionRestarted 	  chan bool
+	ConnectionClosed    chan bool
+	ConnectionRestart   chan bool // Triggered when receiving a Retry or a VN packet
+	ConnectionRestarted chan bool
 
 	OriginalDestinationCID ConnectionID
 	SourceCID              ConnectionID
@@ -67,17 +68,18 @@ type Connection struct {
 	LargestPNsReceived     map[PNSpace]PacketNumber // Stores the largest PN received
 	LargestPNsAcknowledged map[PNSpace]PacketNumber // Stores the largest PN we have sent that were acknowledged by the peer
 
-	MinRTT             uint64
-	SmoothedRTT        uint64
-	RTTVar             uint64
+	MinRTT      uint64
+	SmoothedRTT uint64
+	RTTVar      uint64
 
-	AckQueue             map[PNSpace][]PacketNumber // Stores the packet numbers to be acked TODO: This should be a channel actually
-	Logger               *log.Logger
+	AckQueue map[PNSpace][]PacketNumber // Stores the packet numbers to be acked TODO: This should be a channel actually
+	Logger   *log.Logger
 }
+
 func (c *Connection) ConnectedIp() net.Addr {
 	return c.UdpConnection.RemoteAddr()
 }
-func (c *Connection) nextPacketNumber(space PNSpace) PacketNumber {  // TODO: This should be thread safe
+func (c *Connection) nextPacketNumber(space PNSpace) PacketNumber { // TODO: This should be thread safe
 	pn := c.PacketNumber[space]
 	c.PacketNumber[space]++
 	return pn
@@ -133,6 +135,48 @@ func (c *Connection) DoSendPacket(packet Packet, level EncryptionLevel) {
 		// Clients do not send cleartext packets
 	}
 }
+
+//testing adding a spurious initial packet scenario
+// func (c *Connection) GetSpuriousInitialPacket(preferredPath string) *InitialPacket {
+func (c *Connection) GetSpuriousInitialPacket() *InitialPacket {
+	extensionData, err := c.TLSTPHandler.GetExtensionData()
+	if err != nil {
+		println(err)
+		return nil
+	}
+	c.Tls.SetQUICTransportParameters(extensionData)
+
+	tlsOutput, notComplete, err := c.Tls.HandleMessage(nil, pigotls.EpochInitial)
+	if err != nil || !notComplete {
+		println(err.Error())
+		return nil
+	}
+	clientHello := tlsOutput[0].Data
+	cryptoFrame := NewCryptoFrame(c.CryptoStreams.Get(PNSpaceInitial), clientHello)
+
+	if len(c.Tls.ZeroRTTSecret()) > 0 {
+		c.Logger.Printf("0-RTT secret is available, installing crypto state")
+		c.CryptoStates[EncryptionLevel0RTT] = NewProtectedCryptoState(c.Tls, nil, c.Tls.ZeroRTTSecret())
+		c.EncryptionLevels.Submit(DirectionalEncryptionLevel{EncryptionLevel: EncryptionLevel0RTT, Read: false, Available: true})
+	}
+
+	var initialLength int
+	if c.UseIPv6 {
+		initialLength = MinimumInitialLengthv6
+	} else {
+		initialLength = MinimumInitialLength
+	}
+
+	initialPacket := NewInitialPacket(c)
+	initialPacket.Frames = append(initialPacket.Frames, cryptoFrame)
+	// payload := []byte(fmt.Sprintf("GET %s\r\n", preferredPath))
+	payload := []byte(fmt.Sprintf("GET ./index.html"))
+	initialPacket.Frames = append(initialPacket.Frames, NewStreamFrame(0, 0, payload, false))
+	initialPacket.PadTo(initialLength - c.CryptoStates[EncryptionLevelInitial].Write.Overhead())
+
+	return initialPacket
+}
+
 func (c *Connection) GetInitialPacket() *InitialPacket {
 	extensionData, err := c.TLSTPHandler.GetExtensionData()
 	if err != nil {
@@ -181,7 +225,7 @@ func (c *Connection) ProcessVersionNegotation(vn *VersionNegotiationPacket) erro
 		return errors.New("no appropriate version found")
 	}
 	QuicVersion = version
-	QuicALPNToken = fmt.Sprintf("%s-%02d", strings.Split(c.ALPN, "-")[0], version & 0xff)
+	QuicALPNToken = fmt.Sprintf("%s-%02d", strings.Split(c.ALPN, "-")[0], version&0xff)
 	_, err := rand.Read(c.DestinationCID)
 	c.TransitionTo(QuicVersion, QuicALPNToken)
 	return err
@@ -211,7 +255,7 @@ func (c *Connection) GetAckFrame(space PNSpace) *AckFrame { // Returns an ack fr
 	previous := frame.LargestAcknowledged
 	ackBlock := AckRange{}
 	for _, number := range packetNumbers[1:] {
-		if previous - number == 1 {
+		if previous-number == 1 {
 			ackBlock.AckRange++
 		} else {
 			frame.AckRanges = append(frame.AckRanges, ackBlock)
@@ -246,7 +290,7 @@ func (c *Connection) TransitionTo(version uint32, ALPN string) {
 }
 func (c *Connection) CloseConnection(quicLayer bool, errCode uint64, reasonPhrase string) {
 	if quicLayer {
-		c.FrameQueue.Submit(QueuedFrame{&ConnectionCloseFrame{errCode,0, uint64(len(reasonPhrase)), reasonPhrase}, EncryptionLevelBest})
+		c.FrameQueue.Submit(QueuedFrame{&ConnectionCloseFrame{errCode, 0, uint64(len(reasonPhrase)), reasonPhrase}, EncryptionLevelBest})
 	} else {
 		c.FrameQueue.Submit(QueuedFrame{&ApplicationCloseFrame{errCode, uint64(len(reasonPhrase)), reasonPhrase}, EncryptionLevelBest})
 	}
@@ -291,7 +335,7 @@ func NewDefaultConnection(address string, serverName string, resumptionTicket []
 	if negotiateHTTP3 {
 		c = NewConnection(serverName, QuicVersion, QuicH3ALPNToken, scid, dcid, udpConn, resumptionTicket)
 	} else {
-		QuicALPNToken = fmt.Sprintf("%s-%02d", preferredALPN, QuicVersion & 0xff)
+		QuicALPNToken = fmt.Sprintf("%s-%02d", preferredALPN, QuicVersion&0xff)
 		c = NewConnection(serverName, QuicVersion, QuicALPNToken, scid, dcid, udpConn, resumptionTicket)
 	}
 
@@ -310,7 +354,7 @@ func NewDefaultConnection(address string, serverName string, resumptionTicket []
 
 findMTU:
 	for _, e := range itfs {
-		addrs , err := e.Addrs()
+		addrs, err := e.Addrs()
 		if err != nil {
 			return nil, err
 		}
@@ -331,7 +375,7 @@ findMTU:
 	return c, nil
 }
 
-func NewConnection(serverName string, version uint32, ALPN string, SCID []byte, DCID[]byte , udpConn *net.UDPConn, resumptionTicket []byte) *Connection {
+func NewConnection(serverName string, version uint32, ALPN string, SCID []byte, DCID []byte, udpConn *net.UDPConn, resumptionTicket []byte) *Connection {
 	c := new(Connection)
 	c.ServerName = serverName
 	c.UdpConnection = udpConn

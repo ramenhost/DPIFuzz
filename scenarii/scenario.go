@@ -14,8 +14,9 @@ package scenarii
 import (
 	qt "github.com/QUIC-Tracker/quic-tracker"
 
-	"github.com/QUIC-Tracker/quic-tracker/agents"
 	"time"
+
+	"github.com/QUIC-Tracker/quic-tracker/agents"
 )
 
 type Scenario interface {
@@ -128,7 +129,8 @@ func GetAllScenarii() map[string]Scenario {
 		"spin_bit":                   NewSpinBitScenario(),
 		"server_flow_control":        NewServerFlowControlScenario(),
 		"connection_migration_v4_v6": NewConnectionMigrationv4v6Scenario(),
-		"zero_length_cid": 			  NewZeroLengthCID(),
+		"zero_length_cid":            NewZeroLengthCID(),
 		"multi_packet_client_hello":  NewMultiPacketClientHello(),
+		"spurious_initial_packet":    NewSpuriousInitialPacketScenario(),
 	}
 }

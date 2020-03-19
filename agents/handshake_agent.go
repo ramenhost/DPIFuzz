@@ -5,15 +5,16 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	. "github.com/QUIC-Tracker/quic-tracker"
 	"strings"
 	"time"
+
+	. "github.com/QUIC-Tracker/quic-tracker"
 )
 
 type HandshakeStatus struct {
 	Completed bool
 	Packet
-	Error     error
+	Error error
 }
 
 func (s HandshakeStatus) String() string {
@@ -25,13 +26,13 @@ func (s HandshakeStatus) String() string {
 // should only be published once, reporting a failure or a success.
 type HandshakeAgent struct {
 	BaseAgent
-	TLSAgent         *TLSAgent
-	SocketAgent      *SocketAgent
-	HandshakeStatus  Broadcaster //type: HandshakeStatus
-	IgnoreRetry 	 bool
-	DontDropKeys     bool
-	sendInitial		 chan bool
-	receivedRetry    bool
+	TLSAgent        *TLSAgent
+	SocketAgent     *SocketAgent
+	HandshakeStatus Broadcaster //type: HandshakeStatus
+	IgnoreRetry     bool
+	DontDropKeys    bool
+	sendInitial     chan bool
+	receivedRetry   bool
 }
 
 func (a *HandshakeAgent) Run(conn *Connection) {
@@ -56,7 +57,8 @@ func (a *HandshakeAgent) Run(conn *Connection) {
 			select {
 			case <-a.sendInitial:
 				a.Logger.Println("Sending first Initial packet")
-				conn.SendPacket.Submit(PacketToSend{Packet: conn.GetInitialPacket(), EncryptionLevel: EncryptionLevelInitial})
+				conn.SendPacket.Submit(PacketToSend{Packet: conn.GetSpuriousInitialPacket(), EncryptionLevel: EncryptionLevelInitial})
+				// conn.SendPacket.Submit(PacketToSend{Packet: conn.GetInitialPacket(), EncryptionLevel: EncryptionLevelInitial})
 			case p := <-incPackets:
 				switch p := p.(type) {
 				case *VersionNegotiationPacket:
@@ -68,7 +70,7 @@ func (a *HandshakeAgent) Run(conn *Connection) {
 					close(conn.ConnectionRestart)
 				case *RetryPacket:
 					// TODO: Validate this, https://tools.ietf.org/html/draft-ietf-quic-tls-25#section-5.8
-					if !a.IgnoreRetry && bytes.Equal(conn.DestinationCID, p.OriginalDestinationCID) && !a.receivedRetry {  // TODO: Check the original_connection_id TP too
+					if !a.IgnoreRetry && bytes.Equal(conn.DestinationCID, p.OriginalDestinationCID) && !a.receivedRetry { // TODO: Check the original_connection_id TP too
 						a.receivedRetry = true
 						conn.DestinationCID = p.Header().(*LongHeader).SourceCID
 						tlsTP, alpn := conn.TLSTPHandler, conn.ALPN
@@ -100,7 +102,7 @@ func (a *HandshakeAgent) Run(conn *Connection) {
 				default:
 					a.HandshakeStatus.Submit(HandshakeStatus{false, p.(Packet), errors.New("received incorrect packet type during handshake")})
 				}
-				pingTimer.Reset(time.Duration(conn.SmoothedRTT + conn.RTTVar) * time.Microsecond)
+				pingTimer.Reset(time.Duration(conn.SmoothedRTT+conn.RTTVar) * time.Microsecond)
 			case p := <-outPackets:
 				if !tlsCompleted || conn.Version >= 0xff000019 {
 					break
@@ -126,7 +128,7 @@ func (a *HandshakeAgent) Run(conn *Connection) {
 				tlsPacket = s.Packet
 			case i := <-socketStatus:
 				if strings.Contains(i.(error).Error(), "connection refused") {
-					a.HandshakeStatus.Submit(HandshakeStatus{false, nil , i.(error)})
+					a.HandshakeStatus.Submit(HandshakeStatus{false, nil, i.(error)})
 					return
 				}
 			case <-pingTimer.C:
