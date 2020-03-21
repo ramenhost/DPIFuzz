@@ -132,5 +132,6 @@ func GetAllScenarii() map[string]Scenario {
 		"zero_length_cid":            NewZeroLengthCID(),
 		"multi_packet_client_hello":  NewMultiPacketClientHello(),
 		"spurious_initial_packet":    NewSpuriousInitialPacketScenario(),
+		"random_sequence":            NewRandomSequenceScenario(),
 	}
 }
