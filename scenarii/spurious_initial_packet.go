@@ -1,34 +1,5 @@
 package scenarii
 
-// import (
-// 	qt "github.com/QUIC-Tracker/quic-tracker"
-
-// 	"github.com/QUIC-Tracker/quic-tracker/agents"
-// )
-
-// type SpuriousInitialPacketScenario struct {
-// 	AbstractScenario
-// }
-
-// func NewSpuriousInitialPacketScenario() *SpuriousInitialPacketScenario {
-// 	return &SpuriousInitialPacketScenario{AbstractScenario{name: "spurious_initial_packet", version: 2}}
-// }
-
-// func (s *SpuriousInitialPacketScenario) Run(conn *qt.Connection, trace *qt.Trace, preferredPath string, debug bool) {
-// 	connAgents := agents.AttachAgentsToConnection(conn, agents.GetDefaultAgents()...)
-// 	defer connAgents.StopAll()
-
-// 	incPackets := conn.IncomingPackets.RegisterNewChan(1000)
-// 	initial := conn.GetSpuriousInitialPacket(preferredPath)
-// 	conn.DoSendPacket(initial, qt.EncryptionLevelInitial)
-
-// 	for{
-// 		select{
-// 		case i := <-incPackets
-// 		}
-// 	}
-// }
-
 import (
 	qt "github.com/QUIC-Tracker/quic-tracker"
 
@@ -43,14 +14,8 @@ func NewSpuriousInitialPacketScenario() *SpuriousInitialPacketScenario {
 	return &SpuriousInitialPacketScenario{AbstractScenario{name: "spurious_initial_packet", version: 2}}
 }
 
-// type HandshakeScenario struct {
-// 	AbstractScenario
-// }
-
-// func NewHandshakeScenario() *HandshakeScenario {
-// 	return &HandshakeScenario{AbstractScenario{name: "handshake", version: 2}}
-// }
 func (s *SpuriousInitialPacketScenario) Run(conn *qt.Connection, trace *qt.Trace, preferredPath string, debug bool) {
+	agents.SpuriousScenario = true
 	connAgents := agents.AttachAgentsToConnection(conn, agents.GetDefaultAgents()...)
 	handshakeAgent := &agents.HandshakeAgent{TLSAgent: connAgents.Get("TLSAgent").(*agents.TLSAgent), SocketAgent: connAgents.Get("SocketAgent").(*agents.SocketAgent)}
 	connAgents.Add(handshakeAgent)
@@ -79,8 +44,10 @@ func (s *SpuriousInitialPacketScenario) Run(conn *qt.Connection, trace *qt.Trace
 			handshakeAgent.HandshakeStatus.Unregister(handshakeStatus)
 			s.Finished()
 		case <-conn.ConnectionClosed:
+			agents.SpuriousScenario = false
 			return
 		case <-s.Timeout():
+			agents.SpuriousScenario = false
 			if !status.Completed {
 				if trace.ErrorCode == 0 {
 					trace.MarkError(H_Timeout, "", nil)

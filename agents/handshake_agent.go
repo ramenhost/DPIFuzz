@@ -11,6 +11,8 @@ import (
 	. "github.com/QUIC-Tracker/quic-tracker"
 )
 
+var SpuriousScenario bool = false
+
 type HandshakeStatus struct {
 	Completed bool
 	Packet
@@ -57,8 +59,12 @@ func (a *HandshakeAgent) Run(conn *Connection) {
 			select {
 			case <-a.sendInitial:
 				a.Logger.Println("Sending first Initial packet")
-				conn.SendPacket.Submit(PacketToSend{Packet: conn.GetSpuriousInitialPacket(), EncryptionLevel: EncryptionLevelInitial})
-				// conn.SendPacket.Submit(PacketToSend{Packet: conn.GetInitialPacket(), EncryptionLevel: EncryptionLevelInitial})
+				if SpuriousScenario == false {
+					conn.SendPacket.Submit(PacketToSend{Packet: conn.GetInitialPacket(), EncryptionLevel: EncryptionLevelInitial})
+				} else {
+					conn.SendPacket.Submit(PacketToSend{Packet: conn.GetSpuriousInitialPacket(), EncryptionLevel: EncryptionLevelInitial})
+				}
+
 			case p := <-incPackets:
 				switch p := p.(type) {
 				case *VersionNegotiationPacket:
