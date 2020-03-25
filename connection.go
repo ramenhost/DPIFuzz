@@ -16,6 +16,8 @@ import (
 	"github.com/mpiraux/pigotls"
 )
 
+var PacketPayloadFuzz bool = true
+
 type Connection struct {
 	ServerName    string
 	UdpConnection *net.UDPConn

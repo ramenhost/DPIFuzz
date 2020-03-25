@@ -133,5 +133,6 @@ func GetAllScenarii() map[string]Scenario {
 		"multi_packet_client_hello":  NewMultiPacketClientHello(),
 		"spurious_initial_packet":    NewSpuriousInitialPacketScenario(),
 		"random_sequence":            NewRandomSequenceScenario(),
+		"random_packet_sequence":     NewRandomPacketSequenceScenario(),
 	}
 }
