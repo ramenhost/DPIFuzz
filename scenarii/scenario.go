@@ -134,5 +134,6 @@ func GetAllScenarii() map[string]Scenario {
 		"spurious_initial_packet":    NewSpuriousInitialPacketScenario(),
 		"random_sequence":            NewRandomSequenceScenario(),
 		"random_packet_sequence":     NewRandomPacketSequenceScenario(),
+		"stream_reset_reordering":    NewStreamResetReorderingScenario(),
 	}
 }
