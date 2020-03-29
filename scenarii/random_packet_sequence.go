@@ -10,19 +10,17 @@ import (
 
 var li = [2]uint64{0x00, 0x01}
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
 type RandomPacketSequenceScenario struct {
 	AbstractScenario
 }
 
-func RandStringBytes(n int) []byte {
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
-	}
-	return b
-}
+// func RandStringBytes(n int) []byte {
+// 	b := make([]byte, n)
+// 	for i := range b {
+// 		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+// 	}
+// 	return b
+// }
 
 func NewRandomPacketSequenceScenario() *RandomPacketSequenceScenario {
 	return &RandomPacketSequenceScenario{AbstractScenario{name: "random_sequence", version: 2}}
@@ -62,7 +60,7 @@ func (s *RandomPacketSequenceScenario) Run(conn *qt.Connection, trace *qt.Trace,
 		// 	conn.DoSendPacket(qt.NewHandshakePacket(conn), qt.EncryptionLevelHandshake)
 		case 0x01:
 			// payload := []byte(fmt.Sprintf("GET %s\r\n", preferredPath))
-			payload := RandStringBytes(rand.Intn(100))
+			payload := qt.RandStringBytes(rand.Intn(100))
 			pp3 := qt.NewProtectedPacket(conn)
 			pp3.Frames = append(pp3.Frames, qt.NewStreamFrame(0, 0, payload, false))
 			conn.DoSendPacket(pp3, qt.EncryptionLevel1RTT)
