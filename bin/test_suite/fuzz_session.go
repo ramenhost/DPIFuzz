@@ -13,7 +13,8 @@ import (
 	"time"
 )
 
-var list = [34]string{"zero_rtt", "connection_migration", "unsupported_tls_version", "stream_opening_reordering", "multi_stream", "new_connection_id", "version_negotiation", "handshake", "handshake_v6", "transport_parameters", "address_validation", "padding", "flow_control", "ack_only", "ack_ecn", "stop_sending", "http_get_and_wait", "http_get_on_uni_stream", "key_update", "retire_connection_id", "http3_get", "http3_encoder_stream", "http3_uni_streams_limits", "http3_reserved_frames", "http3_reserved_streams", "spin_bit", "server_flow_control", "connection_migration_v4_v6", "zero_length_cid", "multi_packet_client_hello", "spurious_initial_packet", "random_sequence", "random_packet_sequence", "stream_reset_reordering"}
+var scenario_list = [34]string{"zero_rtt", "connection_migration", "unsupported_tls_version", "stream_opening_reordering", "multi_stream", "new_connection_id", "version_negotiation", "handshake", "handshake_v6", "transport_parameters", "address_validation", "padding", "flow_control", "ack_only", "ack_ecn", "stop_sending", "http_get_and_wait", "http_get_on_uni_stream", "key_update", "retire_connection_id", "http3_get", "http3_encoder_stream", "http3_uni_streams_limits", "http3_reserved_frames", "http3_reserved_streams", "spin_bit", "server_flow_control", "connection_migration_v4_v6", "zero_length_cid", "multi_packet_client_hello", "spurious_initial_packet", "random_sequence", "random_packet_sequence", "stream_reset_reordering"}
+var host_list = [2]string{"quic.tech:8443", "fb.mvfst.net:443"}
 
 func main() {
 	qt.FuzzSession = true
@@ -29,7 +30,7 @@ func main() {
 	flag.Parse()
 
 	scenarioName := new(string)
-	*scenarioName = list[rand.Intn(34)]
+	*scenarioName = scenario_list[rand.Intn(34)]
 	// *scenarioName = list[4]
 	// *scenarioName = "connection_migration"
 	fmt.Println(*scenarioName)

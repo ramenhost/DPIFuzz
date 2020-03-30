@@ -16,7 +16,7 @@ import (
 	"unsafe"
 )
 
-var FuzzSession bool = true
+var FuzzSession bool = false
 
 // var packet_count int = 0
 
@@ -352,7 +352,7 @@ func fuzz_individual_frame(frame *Frame) {
 					(*frame).(*ConnectionCloseFrame).ReasonPhraseLength = r.Uint64()
 				case "ReasonPhrase":
 					//could this lead to memory overlap problems ?
-					(*frame).(*ConnectionCloseFrame).ReasonPhrase = string(RandStringBytes(r.Intn(100)))
+					// (*frame).(*ConnectionCloseFrame).ReasonPhrase = string(RandStringBytes(r.Intn(100)))
 				}
 			}
 		}
@@ -368,7 +368,7 @@ func fuzz_individual_frame(frame *Frame) {
 					(*frame).(*ApplicationCloseFrame).reasonPhraseLength = r.Uint64()
 				case "reasonPhrase":
 					//could this lead to memory overlap problems ?
-					(*frame).(*ApplicationCloseFrame).reasonPhrase = string(RandStringBytes(r.Intn(100)))
+					// (*frame).(*ApplicationCloseFrame).reasonPhrase = string(RandStringBytes(r.Intn(100)))
 				}
 			}
 		}
