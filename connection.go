@@ -212,19 +212,19 @@ func fuzz_individual_frame(frame *Frame) {
 				}
 			}
 		}
-	case MaxStreamDataType:
-		fmt.Println("Fuzzing MaxStreamData frame")
-		maxStreamData_fields := [2]string{"StreamId", "MaximumData"}
-		for i := 0; i < 2; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field := maxStreamData_fields[i]; fuzz_field {
-				case "StreamId":
-					(*frame).(*MaxStreamDataFrame).StreamId = uint64(r.Uint32())
-				case "MaximumData":
-					(*frame).(*MaxStreamDataFrame).MaximumStreamData = uint64(r.Uint32())
-				}
-			}
-		}
+	// case MaxStreamDataType:
+	// 	fmt.Println("Fuzzing MaxStreamData frame")
+	// 	maxStreamData_fields := [2]string{"StreamId", "MaximumData"}
+	// 	for i := 0; i < 2; i++ {
+	// 		if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+	// 			switch fuzz_field := maxStreamData_fields[i]; fuzz_field {
+	// 			case "StreamId":
+	// 				(*frame).(*MaxStreamDataFrame).StreamId = uint64(r.Uint32())
+	// 			case "MaximumData":
+	// 				(*frame).(*MaxStreamDataFrame).MaximumStreamData = uint64(r.Uint32())
+	// 			}
+	// 		}
+	// 	}
 	case MaxStreamsType:
 		fmt.Println("Fuzzing MaxStreams frame")
 		maxStream_fields := [2]string{"StreamType", "MaximumStreams"}
@@ -378,9 +378,9 @@ func fuzz_individual_frame(frame *Frame) {
 
 func fuzz_payload(payload []byte) []byte {
 	fmt.Println("fuzzing payload")
-	list := [2]string{"repeat_payload", "alter_payload"}
+	list := [3]string{"repeat_payload", "alter_payload", "add_random_payload"}
 	//test whether math/rand is the right choice for our purpose or not
-	index := r.Intn(2)
+	index := r.Intn(3)
 	switch list[index] {
 	case "repeat_payload":
 		fmt.Println("repeating payload")
@@ -397,6 +397,10 @@ func fuzz_payload(payload []byte) []byte {
 				payload[i] = token[0]
 			}
 		}
+	case "add_random_payload":
+		fmt.Println("adding random payload")
+		rand_payload := RandStringBytes(r.Intn(200))
+		payload = append(payload, rand_payload...)
 	}
 	return payload
 }
