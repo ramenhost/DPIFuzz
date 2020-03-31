@@ -377,6 +377,7 @@ func fuzz_individual_frame(frame *Frame) {
 }
 
 func fuzz_payload(payload []byte) []byte {
+	fmt.Println("fuzzing payload")
 	list := [2]string{"repeat_payload", "alter_payload"}
 	//test whether math/rand is the right choice for our purpose or not
 	index := r.Intn(2)
@@ -416,7 +417,6 @@ func fuzz_frame(packet *Packet, level EncryptionLevel) {
 func (c *Connection) EncodeAndEncrypt(packet Packet, level EncryptionLevel) []byte {
 	fuzz_decision := r.Float32() < 0.5
 
-	fmt.Println("Testing")
 	list := [2]string{"fuzz_payload", "fuzz_frame"}
 	action := r.Intn(2)
 	if list[action] == "fuzz_frame" && fuzz_decision == true && FuzzSession == true {
@@ -428,7 +428,6 @@ func (c *Connection) EncodeAndEncrypt(packet Packet, level EncryptionLevel) []by
 		cryptoState := c.CryptoStates[level]
 
 		payload := packet.EncodePayload()
-		fmt.Println("after encoding")
 		// var f []Frame
 		// if packet.PNSpace() == PNSpaceInitial {
 		// 	frame, err := NewFrame(bytes.NewReader(payload), c)
@@ -442,7 +441,6 @@ func (c *Connection) EncodeAndEncrypt(packet Packet, level EncryptionLevel) []by
 		// 	fmt.Println(fi.FrameType())
 		// }
 		// fmt.Println("done")
-		fmt.Println(len(payload))
 		if list[action] == "fuzz_payload" && fuzz_decision == true && FuzzSession == true {
 			payload = fuzz_payload(payload)
 		}
