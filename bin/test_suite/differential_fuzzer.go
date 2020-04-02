@@ -24,8 +24,6 @@ import (
 func main() {
 	hostsFilename := flag.String("hosts", "", "A tab-separated file containing hosts, the paths used to request data to be sent and ports for negotiating h3.")
 	scenarioName := flag.String("scenario", "", "A particular scenario to run. Run all of them if the parameter is missing.")
-	// outputFilename := flag.String("output", "", "The file to write the output to. Output to stdout if not set.")
-	// logsDirectory := flag.String("logs-directory", "/tmp", "Location of the logs.")
 	traceDirectory := flag.String("trace-directory", "/tmp", "Location of the trace files.")
 	netInterface := flag.String("interface", "", "The interface to listen to when capturing pcaps. Lets tcpdump decide if not set.")
 	parallel := flag.Bool("parallel", false, "Runs each scenario against multiple hosts at the same time.")
@@ -34,6 +32,7 @@ func main() {
 	timeout := flag.Int("timeout", 10, "The amount of time in seconds spent when completing a test. Defaults to 10. When set to 0, each test ends as soon as possible.")
 	debug := flag.Bool("debug", false, "Enables debugging information to be printed.")
 	fuzz := flag.Bool("fuzz", false, "Enable fuzzer.")
+	iterations := flag.Int("iterations", 10, "Number of time we want to execute a scenario.")
 
 	flag.Parse()
 
@@ -69,17 +68,6 @@ func main() {
 		println("Unknown scenario", *scenarioName)
 	}
 
-	// var results Results
-	// result := make(chan *qt.Trace)
-	// resultsAgg := make(chan bool)
-
-	// go func() {
-	// 	for t := range result {
-	// 		results = append(results, *t)
-	// 	}
-	// 	close(resultsAgg)
-	// }()
-
 	wg := &sync.WaitGroup{}
 	if !*parallel {
 		*maxInstances = 1
@@ -95,7 +83,7 @@ func main() {
 		scenario := scenariiInstances[id]
 		os.MkdirAll(p.Join(*traceDirectory, id), os.ModePerm)
 		sname := id
-		for j := 0; j < 2; j++ {
+		for j := 0; j < *iterations; j++ {
 
 			//Generating a random source to initialise math/rand
 			b := make([]byte, 8)
@@ -152,8 +140,6 @@ func main() {
 					}
 
 					c := exec.Command("go", args...)
-					// c.Stdout = logFile
-					// c.Stderr = logFile
 					err = c.Run()
 					if err != nil {
 						println(err.Error())
@@ -193,23 +179,7 @@ func main() {
 		}
 	}
 	wg.Wait()
-	// close(result)
-	// <-resultsAgg
 
-	// sort.Sort(results)
-	// out, _ := json.Marshal(results)
-	// if *outputFilename != "" {
-	// 	outFile, err := os.Create(*outputFilename)
-	// 	defer outFile.Close()
-	// 	if err == nil {
-	// 		outFile.Write(out)
-	// 		return
-	// 	} else {
-	// 		println(err.Error())
-	// 	}
-	// }
-
-	// println(string(out))
 }
 
 func GetCrashTrace(scenario scenarii.Scenario, host string) *qt.Trace {
@@ -217,14 +187,3 @@ func GetCrashTrace(scenario scenarii.Scenario, host string) *qt.Trace {
 	trace.ErrorCode = 254
 	return trace
 }
-
-// type Results []qt.Trace
-
-// func (a Results) Less(i, j int) bool {
-// 	if a[i].Scenario == a[j].Scenario {
-// 		return a[i].Host < a[j].Host
-// 	}
-// 	return a[i].Scenario < a[j].Scenario
-// }
-// func (a Results) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-// func (a Results) Len() int      { return len(a) }
