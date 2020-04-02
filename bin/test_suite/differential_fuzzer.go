@@ -33,7 +33,6 @@ func main() {
 	debug := flag.Bool("debug", false, "Enables debugging information to be printed.")
 	fuzz := flag.Bool("fuzz", false, "Enable fuzzer.")
 	iterations := flag.Int("iterations", 10, "Number of time we want to execute a scenario.")
-
 	flag.Parse()
 
 	_, filename, _, ok := runtime.Caller(0)
@@ -153,15 +152,6 @@ func main() {
 					defer outputFile.Close()
 					defer os.Remove(outputFile.Name())
 
-					err = json.NewDecoder(outputFile).Decode(&trace)
-					if err != nil {
-						println(err.Error())
-						crashTrace.StartedAt = start.Unix()
-						crashTrace.Duration = uint64(time.Now().Sub(start).Seconds() * 1000)
-						// result <- crashTrace
-						return
-					}
-
 					traceFile, err := os.Create(p.Join(*traceDirectory, sname, host+"_"+strconv.Itoa(iter)))
 					if err != nil {
 						println(err.Error())
@@ -169,10 +159,27 @@ func main() {
 					}
 					defer traceFile.Close()
 
-					out, _ := json.Marshal(trace)
-					traceFile.Write(out)
+					err = json.NewDecoder(outputFile).Decode(&trace)
+					if err != nil {
+						println(err.Error())
+						crashTrace.StartedAt = start.Unix()
+						crashTrace.Duration = uint64(time.Now().Sub(start).Seconds() * 1000)
+						out, _ := json.Marshal(crashTrace)
+						traceFile.Write(out)
+						return
+					}
 
-					// result <- &trace
+					out, _ := json.Marshal(trace.Results)
+					out_1, _ := json.Marshal(trace.ErrorCode)
+
+					if len(out) != 0 {
+						traceFile.Write(out)
+					}
+
+					if len(out_1) != 0 {
+						traceFile.Write(out_1)
+					}
+
 				}()
 			}
 			file.Seek(0, 0)
