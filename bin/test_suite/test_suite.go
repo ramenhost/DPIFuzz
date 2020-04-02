@@ -19,6 +19,8 @@ import (
 	"time"
 )
 
+// var host_list = [2]string{"quic.tech:8443", "fb.mvfst.net:443"}
+
 func main() {
 	hostsFilename := flag.String("hosts", "", "A tab-separated file containing hosts, the paths used to request data to be sent and ports for negotiating h3.")
 	scenarioName := flag.String("scenario", "", "A particular scenario to run. Run all of them if the parameter is missing.")
@@ -26,7 +28,7 @@ func main() {
 	logsDirectory := flag.String("logs-directory", "/tmp", "Location of the logs.")
 	netInterface := flag.String("interface", "", "The interface to listen to when capturing pcaps. Lets tcpdump decide if not set.")
 	parallel := flag.Bool("parallel", false, "Runs each scenario against multiple hosts at the same time.")
-	maxInstances := flag.Int("max-instances", 10, "Limits the number of parallel scenario runs.")
+	maxInstances := flag.Int("max-instances", 10, "Limits the number of parallel scenario runs.") //this actually specifies the maximum number of hosts for which a particular scenario can be run simultaneously
 	randomise := flag.Bool("randomise", false, "Randomise the execution order of scenarii")
 	timeout := flag.Int("timeout", 10, "The amount of time in seconds spent when completing a test. Defaults to 10. When set to 0, each test ends as soon as possible.")
 	debug := flag.Bool("debug", false, "Enables debugging information to be printed.")
@@ -84,6 +86,7 @@ func main() {
 		if !*parallel {
 			*maxInstances = 1
 		}
+		//the semaphore ensures that even when the number of hosts listed is greater than *maxInstances, the number of parallel scenarios run does not exceed *maxInstances
 		semaphore := make(chan bool, *maxInstances)
 		for i := 0; i < *maxInstances; i++ {
 			semaphore <- true
@@ -198,11 +201,12 @@ func GetCrashTrace(scenario scenarii.Scenario, host string) *qt.Trace {
 }
 
 type Results []qt.Trace
+
 func (a Results) Less(i, j int) bool {
 	if a[i].Scenario == a[j].Scenario {
 		return a[i].Host < a[j].Host
 	}
 	return a[i].Scenario < a[j].Scenario
 }
-func (a Results) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a Results) Len() int           { return len(a) }
+func (a Results) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a Results) Len() int      { return len(a) }

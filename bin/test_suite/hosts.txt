@@ -1,0 +1,1 @@
+quic.tech:8443	/index.html	8443	hq

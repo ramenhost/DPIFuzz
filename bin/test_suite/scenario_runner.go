@@ -1,10 +1,13 @@
 package main
 
 import (
+	// "csrc"
 	"encoding/json"
 	"flag"
+	// "fmt"
 	qt "github.com/QUIC-Tracker/quic-tracker"
 	s "github.com/QUIC-Tracker/quic-tracker/scenarii"
+	"math/rand"
 	"os"
 	"os/exec"
 	"strings"
@@ -21,6 +24,8 @@ func main() {
 	nopcap := flag.Bool("nopcap", false, "Disables the pcap capture.")
 	netInterface := flag.String("interface", "", "The interface to listen to when capturing pcap.")
 	timeout := flag.Int("timeout", 10, "The amount of time in seconds spent when completing the test. Defaults to 10. When set to 0, the test ends as soon as possible.")
+	source := flag.Int64("source", 1234567, "The amount of time in seconds spent when completing the test. Defaults to 10. When set to 0, the test ends as soon as possible.")
+	fuzz := flag.Bool("fuzz", false, "Enable Fuzzer.")
 	flag.Parse()
 
 	if *host == "" || *path == "" || *scenarioName == "" {
@@ -28,6 +33,10 @@ func main() {
 		os.Exit(-1)
 	}
 
+	if *fuzz == true {
+		qt.FuzzSession = true
+	}
+	qt.R = rand.New(rand.NewSource(*source))
 	scenario, ok := s.GetAllScenarii()[*scenarioName]
 	if !ok {
 		println("Unknown scenario", *scenarioName)

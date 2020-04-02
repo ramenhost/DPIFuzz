@@ -16,8 +16,10 @@ import (
 	"unsafe"
 )
 
+var R *r.Rand
 var FuzzSession bool = false
 
+// var r = csrc.NewRandom(true)
 // var packet_count int = 0
 
 type Connection struct {
@@ -85,7 +87,7 @@ const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 func RandStringBytes(n int) []byte {
 	b := make([]byte, n)
 	for i := range b {
-		b[i] = letterBytes[r.Intn(len(letterBytes))]
+		b[i] = letterBytes[R.Intn(len(letterBytes))]
 	}
 	return b
 }
@@ -109,20 +111,20 @@ func fuzz_individual_frame(frame *Frame) {
 	case AckType:
 		fmt.Println("Fuzzing ACK Frame")
 		ack_fields := [4]string{"LargestAcknowledged", "AckDelay", "AckRangeCount", "AckRanges"}
-		// num := r.Intn(4)
+		// num := R.Intn(4)
 		for i := 0; i < 4; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field := ack_fields[r.Intn(4)]; fuzz_field {
+			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
+				switch fuzz_field := ack_fields[R.Intn(4)]; fuzz_field {
 				case "LargestAcknowledged":
-					(*frame).(*AckFrame).LargestAcknowledged = PacketNumber(uint64(r.Uint32()))
+					(*frame).(*AckFrame).LargestAcknowledged = PacketNumber(uint64(R.Uint32()))
 				case "AckDelay":
-					(*frame).(*AckFrame).AckDelay = uint64(r.Uint32())
+					(*frame).(*AckFrame).AckDelay = uint64(R.Uint32())
 				case "AckRangeCount":
-					(*frame).(*AckFrame).AckRangeCount = uint64(r.Uint32())
+					(*frame).(*AckFrame).AckRangeCount = uint64(R.Uint32())
 				case "AckRanges":
 					for i, _ := range (*frame).(*AckFrame).AckRanges {
-						(*frame).(*AckFrame).AckRanges[i].Gap = uint64(r.Uint32())
-						(*frame).(*AckFrame).AckRanges[i].AckRange = uint64(r.Uint32())
+						(*frame).(*AckFrame).AckRanges[i].Gap = uint64(R.Uint32())
+						(*frame).(*AckFrame).AckRanges[i].AckRange = uint64(R.Uint32())
 					}
 				}
 			}
@@ -132,14 +134,14 @@ func fuzz_individual_frame(frame *Frame) {
 		fmt.Println("Fuzzing Reset Stream")
 		reset_fields := [3]string{"StreamId", "ApplicationErrorCode", "FinalSize"}
 		for i := 0; i < 3; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := reset_fields[i]; fuzz_field {
 				case "StreamId":
-					(*frame).(*ResetStream).StreamId = uint64(r.Uint32())
+					(*frame).(*ResetStream).StreamId = uint64(R.Uint32())
 				case "ApplicationErrorCode":
-					(*frame).(*ResetStream).ApplicationErrorCode = uint64(r.Uint32())
+					(*frame).(*ResetStream).ApplicationErrorCode = uint64(R.Uint32())
 				case "FinalSize":
-					(*frame).(*ResetStream).FinalSize = uint64(r.Uint32())
+					(*frame).(*ResetStream).FinalSize = uint64(R.Uint32())
 				}
 			}
 		}
@@ -147,12 +149,12 @@ func fuzz_individual_frame(frame *Frame) {
 		fmt.Println("Fuzzing Stopsending frame")
 		stop_fields := [2]string{"StreamId", "ApplicationErrorCode"}
 		for i := 0; i < 2; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := stop_fields[i]; fuzz_field {
 				case "StreamId":
-					(*frame).(*StopSendingFrame).StreamId = uint64(r.Uint32())
+					(*frame).(*StopSendingFrame).StreamId = uint64(R.Uint32())
 				case "ApplicationErrorCode":
-					(*frame).(*StopSendingFrame).ApplicationErrorCode = uint64(r.Uint32())
+					(*frame).(*StopSendingFrame).ApplicationErrorCode = uint64(R.Uint32())
 				}
 			}
 		}
@@ -161,10 +163,10 @@ func fuzz_individual_frame(frame *Frame) {
 		fmt.Println("Fuzzing Crypto frame")
 		crypto_fields := [3]string{"Offset", "Length", "CryptoData"}
 		for i := 0; i < 3; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := crypto_fields[i]; fuzz_field {
 				case "Offset":
-					(*frame).(*CryptoFrame).Offset = uint64(r.Uint32())
+					(*frame).(*CryptoFrame).Offset = uint64(R.Uint32())
 					//should we fuzz the next two fields ?
 				case "Length":
 				case "CryptoData":
@@ -175,26 +177,26 @@ func fuzz_individual_frame(frame *Frame) {
 	case StreamType:
 		fmt.Println("Fuzzing Stream Frame")
 		stream_fields := [7]string{"FinBit", "LenBit", "OffBit", "StreamId", "Offset", "Length", "StreamData"}
-		// num := r.Intn(7)
+		// num := R.Intn(7)
 		for i := 0; i < 7; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := stream_fields[i]; fuzz_field {
 				case "FinBit":
-					(*frame).(*StreamFrame).FinBit = r.Float32() < 0.5
+					(*frame).(*StreamFrame).FinBit = R.Float32() < 0.5
 				case "LenBit":
-					(*frame).(*StreamFrame).LenBit = r.Float32() < 0.5
+					(*frame).(*StreamFrame).LenBit = R.Float32() < 0.5
 				case "OffBit":
-					(*frame).(*StreamFrame).OffBit = r.Float32() < 0.5
+					(*frame).(*StreamFrame).OffBit = R.Float32() < 0.5
 				case "StreamId":
-					(*frame).(*StreamFrame).StreamId = uint64(r.Uint32())
+					(*frame).(*StreamFrame).StreamId = uint64(R.Uint32())
 				case "Offset":
-					(*frame).(*StreamFrame).Offset = uint64(r.Uint32())
+					(*frame).(*StreamFrame).Offset = uint64(R.Uint32())
 					// case "Length":
 					// 	//does it make sense to fuzz both the length field and the stream data field ? It will definitely lead to a conflict
-					// 	(*frame).(*StreamFrame).Length = uint64(r.Uint32())
+					// 	(*frame).(*StreamFrame).Length = uint64(R.Uint32())
 					// case "StreamData":
 					// 	token := make([]byte, len((*frame).(*StreamFrame).StreamData))
-					// 	r.Read(token)
+					// 	R.Read(token)
 					// 	(*frame).(*StreamFrame).StreamData = token
 
 				}
@@ -205,10 +207,10 @@ func fuzz_individual_frame(frame *Frame) {
 		fmt.Println("Fuzzing MaxData frame")
 		maxData_fields := [1]string{"MaximumData"}
 		for i := 0; i < 1; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := maxData_fields[i]; fuzz_field {
 				case "MaximumData":
-					(*frame).(*MaxDataFrame).MaximumData = uint64(r.Uint32())
+					(*frame).(*MaxDataFrame).MaximumData = uint64(R.Uint32())
 				}
 			}
 		}
@@ -216,12 +218,12 @@ func fuzz_individual_frame(frame *Frame) {
 	// 	fmt.Println("Fuzzing MaxStreamData frame")
 	// 	maxStreamData_fields := [2]string{"StreamId", "MaximumData"}
 	// 	for i := 0; i < 2; i++ {
-	// 		if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+	// 		if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 	// 			switch fuzz_field := maxStreamData_fields[i]; fuzz_field {
 	// 			case "StreamId":
-	// 				(*frame).(*MaxStreamDataFrame).StreamId = uint64(r.Uint32())
+	// 				(*frame).(*MaxStreamDataFrame).StreamId = uint64(R.Uint32())
 	// 			case "MaximumData":
-	// 				(*frame).(*MaxStreamDataFrame).MaximumStreamData = uint64(r.Uint32())
+	// 				(*frame).(*MaxStreamDataFrame).MaximumStreamData = uint64(R.Uint32())
 	// 			}
 	// 		}
 	// 	}
@@ -229,12 +231,12 @@ func fuzz_individual_frame(frame *Frame) {
 		fmt.Println("Fuzzing MaxStreams frame")
 		maxStream_fields := [2]string{"StreamType", "MaximumStreams"}
 		for i := 0; i < 2; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := maxStream_fields[i]; fuzz_field {
 				case "StreamType":
-					(*frame).(*MaxStreamsFrame).StreamsType = r.Float32() < 0.5
+					(*frame).(*MaxStreamsFrame).StreamsType = R.Float32() < 0.5
 				case "MaximumStreams":
-					(*frame).(*MaxStreamsFrame).MaximumStreams = uint64(r.Uint32())
+					(*frame).(*MaxStreamsFrame).MaximumStreams = uint64(R.Uint32())
 				}
 			}
 		}
@@ -242,10 +244,10 @@ func fuzz_individual_frame(frame *Frame) {
 		fmt.Println("Fuzzing DataBlocked frame")
 		dataBlocked_fields := [1]string{"DataLimit"}
 		for i := 0; i < 1; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := dataBlocked_fields[i]; fuzz_field {
 				case "StreamType":
-					(*frame).(*DataBlockedFrame).DataLimit = uint64(r.Uint32())
+					(*frame).(*DataBlockedFrame).DataLimit = uint64(R.Uint32())
 				}
 			}
 		}
@@ -253,12 +255,12 @@ func fuzz_individual_frame(frame *Frame) {
 		fmt.Println("Fuzzing StreamDataBlocked frame")
 		streamDataBlocked_fields := [2]string{"StreamId", "StreamDataLimit"}
 		for i := 0; i < 2; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := streamDataBlocked_fields[i]; fuzz_field {
 				case "StreamId":
-					(*frame).(*StreamDataBlockedFrame).StreamId = uint64(r.Uint32())
+					(*frame).(*StreamDataBlockedFrame).StreamId = uint64(R.Uint32())
 				case "StreamDataLimit":
-					(*frame).(*StreamDataBlockedFrame).StreamDataLimit = uint64(r.Uint32())
+					(*frame).(*StreamDataBlockedFrame).StreamDataLimit = uint64(R.Uint32())
 				}
 			}
 		}
@@ -266,12 +268,12 @@ func fuzz_individual_frame(frame *Frame) {
 		fmt.Println("Fuzzing StreamsBlocked frame")
 		streamBlocked_fields := [2]string{"StreamsType", "StreamLimit"}
 		for i := 0; i < 2; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := streamBlocked_fields[i]; fuzz_field {
 				case "StreamsType":
-					(*frame).(*StreamsBlockedFrame).StreamsType = r.Float32() < 0.5
+					(*frame).(*StreamsBlockedFrame).StreamsType = R.Float32() < 0.5
 				case "StreamLimit":
-					(*frame).(*StreamsBlockedFrame).StreamLimit = uint64(r.Uint32())
+					(*frame).(*StreamsBlockedFrame).StreamLimit = uint64(R.Uint32())
 				}
 			}
 		}
@@ -279,19 +281,19 @@ func fuzz_individual_frame(frame *Frame) {
 		fmt.Println("Fuzzing NewConnectionId frame")
 		nConId_fields := [5]string{"Sequence", "RetirePriorTo", "Length", "ConnectionId", "StatelessResetToken"}
 		for i := 0; i < 5; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := nConId_fields[i]; fuzz_field {
 				case "Sequence":
-					(*frame).(*NewConnectionIdFrame).Sequence = uint64(r.Uint32())
+					(*frame).(*NewConnectionIdFrame).Sequence = uint64(R.Uint32())
 				case "RetirePriorTo":
-					(*frame).(*NewConnectionIdFrame).RetirePriorTo = uint64(r.Uint32())
+					(*frame).(*NewConnectionIdFrame).RetirePriorTo = uint64(R.Uint32())
 				case "Length":
-					(*frame).(*NewConnectionIdFrame).Length = uint8(r.Intn(255))
+					(*frame).(*NewConnectionIdFrame).Length = uint8(R.Intn(255))
 				case "ConnectionId":
 				case "StatelessResetToken":
 					for j := 0; j < 16; j++ {
 						token := make([]byte, 1)
-						r.Read(token)
+						R.Read(token)
 						(*frame).(*NewConnectionIdFrame).StatelessResetToken[j] = token[0]
 					}
 				}
@@ -301,10 +303,10 @@ func fuzz_individual_frame(frame *Frame) {
 		fmt.Println("Fuzzing RetireConnectionId frame")
 		fields := [1]string{"SequenceNumber"}
 		for i := 0; i < 1; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := fields[i]; fuzz_field {
 				case "SequenceNumber":
-					(*frame).(*RetireConnectionId).SequenceNumber = uint64(r.Uint32())
+					(*frame).(*RetireConnectionId).SequenceNumber = uint64(R.Uint32())
 				}
 			}
 		}
@@ -312,12 +314,12 @@ func fuzz_individual_frame(frame *Frame) {
 		fmt.Println("Fuzzing PathChallenge frame")
 		fields := [1]string{"Data"}
 		for i := 0; i < 1; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := fields[i]; fuzz_field {
 				case "Data":
 					for j := 0; j < 16; j++ {
 						token := make([]byte, 1)
-						r.Read(token)
+						R.Read(token)
 						(*frame).(*PathChallenge).Data[j] = token[0]
 					}
 				}
@@ -327,12 +329,12 @@ func fuzz_individual_frame(frame *Frame) {
 		fmt.Println("Fuzzing PathResponse frame")
 		fields := [1]string{"Data"}
 		for i := 0; i < 1; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := fields[i]; fuzz_field {
 				case "Data":
 					for j := 0; j < 16; j++ {
 						token := make([]byte, 1)
-						r.Read(token)
+						R.Read(token)
 						(*frame).(*PathResponse).Data[j] = token[0]
 					}
 				}
@@ -342,17 +344,17 @@ func fuzz_individual_frame(frame *Frame) {
 		fmt.Println("Fuzzing ConnectionClose frame")
 		fields := [4]string{"ErrorCode", "ErrorFrameType", "ReasonPhraseLength", "ReasonPhrase"}
 		for i := 0; i < 4; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := fields[i]; fuzz_field {
 				case "ErrorCode":
-					(*frame).(*ConnectionCloseFrame).ErrorCode = uint64(r.Uint32())
+					(*frame).(*ConnectionCloseFrame).ErrorCode = uint64(R.Uint32())
 				case "ErrorFrameType":
-					(*frame).(*ConnectionCloseFrame).ErrorFrameType = uint64(r.Uint32())
+					(*frame).(*ConnectionCloseFrame).ErrorFrameType = uint64(R.Uint32())
 				case "ReasonPhraseLength":
-					(*frame).(*ConnectionCloseFrame).ReasonPhraseLength = uint64(r.Uint32())
+					(*frame).(*ConnectionCloseFrame).ReasonPhraseLength = uint64(R.Uint32())
 				case "ReasonPhrase":
 					//could this lead to memory overlap problems ?
-					// (*frame).(*ConnectionCloseFrame).ReasonPhrase = string(RandStringBytes(r.Intn(100)))
+					// (*frame).(*ConnectionCloseFrame).ReasonPhrase = string(RandStringBytes(R.Intn(100)))
 				}
 			}
 		}
@@ -360,15 +362,15 @@ func fuzz_individual_frame(frame *Frame) {
 		fmt.Println("Fuzzing ApplicationClose frame")
 		fields := [3]string{"errorCode", "reasonPhraseLength", "reasonPhrase"}
 		for i := 0; i < 3; i++ {
-			if fuzz_decision := r.Float32() < 0.5; fuzz_decision {
+			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := fields[i]; fuzz_field {
 				case "errorCode":
-					(*frame).(*ApplicationCloseFrame).errorCode = uint64(r.Uint32())
+					(*frame).(*ApplicationCloseFrame).errorCode = uint64(R.Uint32())
 				case "reasonPhraseLength":
-					(*frame).(*ApplicationCloseFrame).reasonPhraseLength = uint64(r.Uint32())
+					(*frame).(*ApplicationCloseFrame).reasonPhraseLength = uint64(R.Uint32())
 				case "reasonPhrase":
 					//could this lead to memory overlap problems ?
-					// (*frame).(*ApplicationCloseFrame).reasonPhrase = string(RandStringBytes(r.Intn(100)))
+					// (*frame).(*ApplicationCloseFrame).reasonPhrase = string(RandStringBytes(R.Intn(100)))
 				}
 			}
 		}
@@ -380,7 +382,7 @@ func fuzz_payload(payload []byte) []byte {
 	fmt.Println("fuzzing payload")
 	list := [3]string{"repeat_payload", "alter_payload", "add_random_payload"}
 	//test whether math/rand is the right choice for our purpose or not
-	index := r.Intn(3)
+	index := R.Intn(3)
 	switch list[index] {
 	case "repeat_payload":
 		fmt.Println("repeating payload")
@@ -389,17 +391,17 @@ func fuzz_payload(payload []byte) []byte {
 	case "alter_payload":
 		fmt.Println("altering payload")
 		for i, _ := range payload {
-			fuzz_decision := r.Float32() < 0.5
+			fuzz_decision := R.Float32() < 0.5
 			switch fuzz_decision {
 			case true:
 				token := make([]byte, 1)
-				r.Read(token)
+				R.Read(token)
 				payload[i] = token[0]
 			}
 		}
 	case "add_random_payload":
 		fmt.Println("adding random payload")
-		rand_payload := RandStringBytes(r.Intn(200))
+		rand_payload := RandStringBytes(R.Intn(200))
 		payload = append(payload, rand_payload...)
 	}
 	return payload
@@ -410,7 +412,7 @@ func fuzz_frame(packet *Packet, level EncryptionLevel) {
 	fmt.Println("fuzzing frame")
 	frames := (*packet).(Framer).GetFrames()
 	for i, _ := range frames {
-		fuzz_decision := r.Float32() < 0.5
+		fuzz_decision := R.Float32() < 0.5
 		if fuzz_decision == true {
 			fuzz_individual_frame(&((*packet).(Framer).GetFrames()[i]))
 		}
@@ -419,11 +421,11 @@ func fuzz_frame(packet *Packet, level EncryptionLevel) {
 }
 
 func (c *Connection) EncodeAndEncrypt(packet Packet, level EncryptionLevel) []byte {
-	fuzz_decision := r.Float32() < 0.5
 
+	fuzz_decision := R.Float32() < 0.5
 	list := [2]string{"fuzz_payload", "fuzz_frame"}
-	action := r.Intn(2)
-	if list[action] == "fuzz_frame" && fuzz_decision == true && FuzzSession == true {
+	action := R.Intn(2)
+	if list[action] == "fuzz_frame" && fuzz_decision == true && FuzzSession == true && packet.PNSpace() == PNSpaceAppData {
 		fuzz_frame(&packet, level)
 	}
 	fmt.Println(packet.PNSpace())
@@ -445,7 +447,7 @@ func (c *Connection) EncodeAndEncrypt(packet Packet, level EncryptionLevel) []by
 		// 	fmt.Println(fi.FrameType())
 		// }
 		// fmt.Println("done")
-		if list[action] == "fuzz_payload" && fuzz_decision == true && FuzzSession == true {
+		if list[action] == "fuzz_payload" && fuzz_decision == true && FuzzSession == true && packet.PNSpace() == PNSpaceAppData {
 			payload = fuzz_payload(payload)
 		}
 		fmt.Println(len(payload))
