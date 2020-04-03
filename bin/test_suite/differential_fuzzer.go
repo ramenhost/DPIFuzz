@@ -2,13 +2,16 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/binary"
 	"encoding/json"
 	"flag"
 	"fmt"
 	qt "github.com/QUIC-Tracker/quic-tracker"
 	"github.com/QUIC-Tracker/quic-tracker/scenarii"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -20,6 +23,113 @@ import (
 	"sync"
 	"time"
 )
+
+// ConcurrentSlice type that can be safely shared between goroutines
+type ConcurrentSlice struct {
+	sync.RWMutex
+	items []interface{}
+}
+
+// ConcurrentSliceItem contains the index/value pair of an item in a
+// concurrent slice
+type ConcurrentSliceItem struct {
+	Index int
+	Value interface{}
+}
+
+// NewConcurrentSlice creates a new concurrent slice
+func NewConcurrentSlice() *ConcurrentSlice {
+	cs := &ConcurrentSlice{
+		items: make([]interface{}, 0),
+	}
+
+	return cs
+}
+
+// Append adds an item to the concurrent slice
+func (cs *ConcurrentSlice) Append(item interface{}) {
+	cs.Lock()
+	defer cs.Unlock()
+
+	cs.items = append(cs.items, item)
+}
+
+// Iter iterates over the items in the concurrent slice
+// Each item is sent over a channel, so that
+// we can iterate over the slice using the builin range keyword
+func (cs *ConcurrentSlice) Iter() <-chan ConcurrentSliceItem {
+	c := make(chan ConcurrentSliceItem)
+
+	f := func() {
+		cs.Lock()
+		defer cs.Unlock()
+		for index, value := range cs.items {
+			c <- ConcurrentSliceItem{index, value}
+		}
+		close(c)
+	}
+	go f()
+
+	return c
+}
+
+type ConcurrentMap struct {
+	sync.RWMutex
+	items map[string]interface{}
+}
+
+// ConcurrentMapItem contains a key/value pair item of a concurrent map
+type ConcurrentMapItem struct {
+	Key   string
+	Value interface{}
+}
+
+// NewConcurrentMap creates a new concurrent map
+func NewConcurrentMap() *ConcurrentMap {
+	cm := &ConcurrentMap{
+		items: make(map[string]interface{}),
+	}
+
+	return cm
+}
+
+// Set adds an item to a concurrent map
+func (cm *ConcurrentMap) Set(key string, value interface{}) {
+	cm.Lock()
+	defer cm.Unlock()
+
+	cm.items[key] = value
+}
+
+// Get retrieves the value for a concurrent map item
+func (cm *ConcurrentMap) Get(key string) (interface{}, bool) {
+	cm.Lock()
+	defer cm.Unlock()
+
+	value, ok := cm.items[key]
+
+	return value, ok
+}
+
+// Iter iterates over the items in a concurrent map
+// Each item is sent over a channel, so that
+// we can iterate over the map using the builtin range keyword
+func (cm *ConcurrentMap) Iter() <-chan ConcurrentMapItem {
+	c := make(chan ConcurrentMapItem)
+
+	f := func() {
+		cm.Lock()
+		defer cm.Unlock()
+
+		for k, v := range cm.items {
+			c <- ConcurrentMapItem{k, v}
+		}
+		close(c)
+	}
+	go f()
+
+	return c
+}
 
 func main() {
 	hostsFilename := flag.String("hosts", "", "A tab-separated file containing hosts, the paths used to request data to be sent and ports for negotiating h3.")
@@ -35,6 +145,8 @@ func main() {
 	iterations := flag.Int("iterations", 10, "Number of time we want to execute a scenario.")
 	flag.Parse()
 
+	fmt.Println(*parallel)
+	fmt.Println(*iterations)
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		println("No caller information")
@@ -54,6 +166,8 @@ func main() {
 	defer file.Close()
 
 	scenariiInstances := scenarii.GetAllScenarii()
+
+	m := make(map[string]int64)
 
 	var scenarioIds []string
 	for scenarioId := range scenariiInstances {
@@ -80,8 +194,8 @@ func main() {
 			continue
 		}
 		scenario := scenariiInstances[id]
-		os.MkdirAll(p.Join(*traceDirectory, id), os.ModePerm)
 		sname := id
+		os.MkdirAll(p.Join(*traceDirectory, sname), os.ModePerm)
 		for j := 0; j < *iterations; j++ {
 
 			//Generating a random source to initialise math/rand
@@ -94,7 +208,13 @@ func main() {
 			}
 			s_ini := binary.BigEndian.Uint64(b)
 			source := int64(s_ini)
+			if source < 0 {
+				source = -1 * source
+			}
 			iter := j
+
+			//storing the source in the map
+			m[sname+"_"+strconv.Itoa(j)] = source
 
 			scanner := bufio.NewScanner(file)
 			for scanner.Scan() {
@@ -169,12 +289,12 @@ func main() {
 						return
 					}
 
-					out, _ := json.Marshal(trace.Results)
+					// out, _ := json.Marshal(trace.Results["error"])
 					out_1, _ := json.Marshal(trace.ErrorCode)
 
-					if len(out) != 0 {
-						traceFile.Write(out)
-					}
+					// if len(out) != 0 {
+					// 	traceFile.Write(out)
+					// }
 
 					if len(out_1) != 0 {
 						traceFile.Write(out_1)
@@ -187,6 +307,97 @@ func main() {
 	}
 	wg.Wait()
 
+	//check for the number of hosts first. Proceed if > 1
+	list := getFuzzerResults(scenarioIds, hostsFilename, *iterations, scenariiInstances, maxInstances, traceDirectory)
+	fmt.Println(list)
+	fmt.Println(m)
+
+}
+
+func getFuzzerResults(scenarioIds []string, hostsFilename *string, iterations int, scenariiInstances map[string]scenarii.Scenario, maxInstances *int, traceDirectory *string) []string {
+	var result []string
+
+	s := NewConcurrentSlice()
+	m := NewConcurrentMap()
+	flag_map := NewConcurrentMap()
+
+	file, err := os.Open(*hostsFilename)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	wg := &sync.WaitGroup{}
+
+	semaphore := make(chan bool, *maxInstances)
+	for i := 0; i < *maxInstances; i++ {
+		semaphore <- true
+	}
+	for _, id := range scenarioIds {
+
+		scenario := scenariiInstances[id]
+		sname := id
+
+		for j := 0; j < iterations; j++ {
+			scanner := bufio.NewScanner(file)
+			iter := j
+			for scanner.Scan() {
+				line := strings.Split(scanner.Text(), "\t")
+				host, _ := line[0], line[1]
+				h3port, err := strconv.Atoi(line[2])
+				if err != nil {
+					println(err)
+					continue
+				}
+
+				if scenario.HTTP3() {
+					split := strings.Split(host, ":")
+					host, _ = split[0], split[1]
+					host = fmt.Sprintf("%s:%d", host, h3port)
+				}
+
+				<-semaphore
+				wg.Add(1)
+				go func() {
+					defer func() { semaphore <- true }()
+					defer wg.Done()
+
+					//calculating hash values
+					f, err := os.Open(p.Join(*traceDirectory, sname, host+"_"+strconv.Itoa(iter)))
+					if err != nil {
+						println(err.Error())
+						return
+					}
+					defer f.Close()
+					h := sha256.New()
+					if _, err := io.Copy(h, f); err != nil {
+						println(err)
+					}
+
+					hash := h.Sum(nil)
+					m_val, success := m.Get(sname + "_" + strconv.Itoa(iter))
+					if success != false {
+						if bytes.Compare(hash, m_val.([]byte)) != 0 {
+							if _, res := flag_map.Get(sname + "_" + strconv.Itoa(iter)); res == false {
+								flag_map.Set(sname+"_"+strconv.Itoa(iter), true)
+								s.Append(sname + "_" + strconv.Itoa(iter))
+							}
+						}
+					} else {
+						m.Set(sname+"_"+strconv.Itoa(iter), hash)
+					}
+
+				}()
+			}
+			file.Seek(0, 0)
+
+		}
+	}
+	wg.Wait()
+	for val := range s.Iter() {
+		result = append(result, val.Value.(string))
+	}
+	return result
 }
 
 func GetCrashTrace(scenario scenarii.Scenario, host string) *qt.Trace {

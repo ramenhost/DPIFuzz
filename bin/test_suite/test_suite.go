@@ -76,7 +76,11 @@ func main() {
 		}
 		close(resultsAgg)
 	}()
-
+	semaphore := make(chan bool, *maxInstances)
+	for i := 0; i < *maxInstances; i++ {
+		semaphore <- true
+	}
+	wg := &sync.WaitGroup{}
 	for _, id := range scenarioIds {
 		if *scenarioName != "" && *scenarioName != id {
 			continue
@@ -87,13 +91,9 @@ func main() {
 			*maxInstances = 1
 		}
 		//the semaphore ensures that even when the number of hosts listed is greater than *maxInstances, the number of parallel scenarios run does not exceed *maxInstances
-		semaphore := make(chan bool, *maxInstances)
-		for i := 0; i < *maxInstances; i++ {
-			semaphore <- true
-		}
-		wg := &sync.WaitGroup{}
+		sname := id
 
-		os.MkdirAll(p.Join(*logsDirectory, id), os.ModePerm)
+		os.MkdirAll(p.Join(*logsDirectory, sname), os.ModePerm)
 
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
@@ -139,7 +139,7 @@ func main() {
 				crashTrace := GetCrashTrace(scenario, host) // Prepare one just in case
 				start := time.Now()
 
-				args := []string{"run", scenarioRunnerFilename, "-host", host, "-path", path, "-alpn", preferredALPN, "-scenario", id, "-interface", *netInterface, "-output", outputFile.Name(), "-timeout", strconv.Itoa(*timeout)}
+				args := []string{"run", scenarioRunnerFilename, "-host", host, "-path", path, "-alpn", preferredALPN, "-scenario", sname, "-interface", *netInterface, "-output", outputFile.Name(), "-timeout", strconv.Itoa(*timeout)}
 				if *debug {
 					args = append(args, "-debug")
 				}
@@ -172,9 +172,9 @@ func main() {
 			}()
 		}
 
-		wg.Wait()
 		file.Seek(0, 0)
 	}
+	wg.Wait()
 	close(result)
 	<-resultsAgg
 
