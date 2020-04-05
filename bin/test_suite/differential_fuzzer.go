@@ -137,22 +137,24 @@ func main() {
 	traceDirectory := flag.String("trace-directory", "/tmp", "Location of the trace files.")
 	netInterface := flag.String("interface", "", "The interface to listen to when capturing pcaps. Lets tcpdump decide if not set.")
 	parallel := flag.Bool("parallel", false, "Runs each scenario against multiple hosts at the same time.")
-	maxInstances := flag.Int("max-instances", 10, "Limits the number of parallel scenario runs.")
+	maxInstances := flag.Int("max-instances", 2, "Limits the number of parallel scenario runs.")
 	randomise := flag.Bool("randomise", false, "Randomise the execution order of scenarii")
 	timeout := flag.Int("timeout", 10, "The amount of time in seconds spent when completing a test. Defaults to 10. When set to 0, each test ends as soon as possible.")
 	debug := flag.Bool("debug", false, "Enables debugging information to be printed.")
 	fuzz := flag.Bool("fuzz", false, "Enable fuzzer.")
-	iterations := flag.Int("iterations", 10, "Number of time we want to execute a scenario.")
+	iterations := flag.Int("iterations", 1, "Number of time we want to execute a scenario.")
 	flag.Parse()
 
-	fmt.Println(*parallel)
-	fmt.Println(*iterations)
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		println("No caller information")
 		os.Exit(-1)
 	}
 	scenarioRunnerFilename := p.Join(p.Dir(filename), "scenario_runner.go")
+
+	fmt.Println(*parallel)
+	fmt.Println(*maxInstances)
+	fmt.Println(*iterations)
 
 	if *hostsFilename == "" {
 		println("The hosts parameter is required")
@@ -167,7 +169,7 @@ func main() {
 
 	scenariiInstances := scenarii.GetAllScenarii()
 
-	m := make(map[string]int64)
+	m := NewConcurrentMap()
 
 	var scenarioIds []string
 	for scenarioId := range scenariiInstances {
@@ -214,7 +216,8 @@ func main() {
 			iter := j
 
 			//storing the source in the map
-			m[sname+"_"+strconv.Itoa(j)] = source
+			// m[sname+"_"+strconv.Itoa(j)] = source
+			m.Set(sname+"_"+strconv.Itoa(iter), source)
 
 			scanner := bufio.NewScanner(file)
 			for scanner.Scan() {
@@ -261,6 +264,7 @@ func main() {
 					c := exec.Command("go", args...)
 					err = c.Run()
 					if err != nil {
+						println(sname)
 						println(err.Error())
 					}
 
@@ -310,7 +314,7 @@ func main() {
 	//check for the number of hosts first. Proceed if > 1
 	list := getFuzzerResults(scenarioIds, hostsFilename, *iterations, scenariiInstances, maxInstances, traceDirectory)
 	fmt.Println(list)
-	fmt.Println(m)
+	//iterate and print map here if required
 
 }
 
