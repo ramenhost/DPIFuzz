@@ -317,9 +317,9 @@ func main() {
 	resultList := getFuzzerResults(scenarioIds, hostsFilename, *iterations, scenariiInstances, maxInstances, traceDirectory)
 
 	//iterate and print map here if required
-	var seedMap []string
+	seedMap := make(map[string]int64)
 	for val := range m.Iter() {
-		seedMap = append(seedMap, val.Value.(string))
+		seedMap[val.Key] = val.Value.(int64)
 	}
 
 	//creating files
