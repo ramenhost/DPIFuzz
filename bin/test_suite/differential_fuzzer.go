@@ -141,8 +141,8 @@ func main() {
 	randomise := flag.Bool("randomise", false, "Randomise the execution order of scenarii")
 	timeout := flag.Int("timeout", 10, "The amount of time in seconds spent when completing a test. Defaults to 10. When set to 0, each test ends as soon as possible.")
 	debug := flag.Bool("debug", false, "Enables debugging information to be printed.")
-	fuzz := flag.Bool("fuzz", false, "Enable fuzzer.")
-	iterations := flag.Int("iterations", 1, "Number of time we want to execute a scenario.")
+	fuzz := flag.Int("fuzz", 0, "Enable fuzzer.")
+	iterations := flag.Int("iterations", 1, "Number of times we want to execute a scenario.")
 	flag.Parse()
 
 	_, filename, _, ok := runtime.Caller(0)
@@ -169,7 +169,7 @@ func main() {
 
 	scenariiInstances := scenarii.GetAllScenarii()
 
-	m := NewConcurrentMap()
+	m := NewConcurrentMap() //map to store seed values with scenario name and iteration number
 
 	var scenarioIds []string
 	for scenarioId := range scenariiInstances {
@@ -216,7 +216,6 @@ func main() {
 			iter := j
 
 			//storing the source in the map
-			// m[sname+"_"+strconv.Itoa(j)] = source
 			m.Set(sname+"_"+strconv.Itoa(iter), source)
 
 			scanner := bufio.NewScanner(file)
@@ -255,16 +254,19 @@ func main() {
 
 					crashTrace := GetCrashTrace(scenario, host) // Prepare one just in case
 					start := time.Now()
-
-					args := []string{"run", scenarioRunnerFilename, "-host", host, "-path", path, "-alpn", preferredALPN, "-scenario", sname, "-interface", *netInterface, "-output", outputFile.Name(), "-timeout", strconv.Itoa(*timeout), "-source", strconv.FormatInt(source, 10), "-fuzz", strconv.FormatBool(*fuzz)}
+					args := []string{"run", scenarioRunnerFilename, "-host", host, "-path", path, "-alpn", preferredALPN, "-scenario", sname, "-interface", *netInterface, "-output", outputFile.Name(), "-timeout", strconv.Itoa(*timeout), "-source", strconv.FormatInt(source, 10), "-fuzz", strconv.Itoa(*fuzz)}
 					if *debug {
 						args = append(args, "-debug")
 					}
 
 					c := exec.Command("go", args...)
+					var out bytes.Buffer
+					var stderr bytes.Buffer
+					c.Stdout = &out
+					c.Stderr = &stderr
 					err = c.Run()
 					if err != nil {
-						println(sname)
+						fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 						println(err.Error())
 					}
 
@@ -312,10 +314,40 @@ func main() {
 	wg.Wait()
 
 	//check for the number of hosts first. Proceed if > 1
-	list := getFuzzerResults(scenarioIds, hostsFilename, *iterations, scenariiInstances, maxInstances, traceDirectory)
-	fmt.Println(list)
-	//iterate and print map here if required
+	resultList := getFuzzerResults(scenarioIds, hostsFilename, *iterations, scenariiInstances, maxInstances, traceDirectory)
 
+	//iterate and print map here if required
+	var seedMap []string
+	for val := range m.Iter() {
+		seedMap = append(seedMap, val.Value.(string))
+	}
+
+	//creating files
+	seedFile, err := os.Create(p.Join(p.Dir(filename), "seed_map.txt"))
+	if err != nil {
+		println(err.Error())
+	}
+	defer seedFile.Close()
+	seedResult, err := json.Marshal(seedMap)
+	if err != nil {
+		println(err.Error())
+		return
+	}
+	seedFile.Write(seedResult)
+
+	resultFile, err := os.Create(p.Join(p.Dir(filename), "comparison_results.txt"))
+	if err != nil {
+		println(err.Error())
+	}
+	defer resultFile.Close()
+	comparisonResult, err := json.Marshal(resultList)
+	if err != nil {
+		println(err.Error())
+		return
+	}
+	resultFile.Write(comparisonResult)
+
+	return
 }
 
 func getFuzzerResults(scenarioIds []string, hostsFilename *string, iterations int, scenariiInstances map[string]scenarii.Scenario, maxInstances *int, traceDirectory *string) []string {

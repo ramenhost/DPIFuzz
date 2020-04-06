@@ -131,9 +131,9 @@ func GetAllScenarii() map[string]Scenario {
 		"connection_migration_v4_v6": NewConnectionMigrationv4v6Scenario(),
 		"zero_length_cid":            NewZeroLengthCID(),
 		"multi_packet_client_hello":  NewMultiPacketClientHello(),
-		"spurious_initial_packet":    NewSpuriousInitialPacketScenario(),
-		"random_sequence":            NewRandomSequenceScenario(),
-		"random_packet_sequence":     NewRandomPacketSequenceScenario(),
-		"stream_reset_reordering":    NewStreamResetReorderingScenario(),
+		// "spurious_initial_packet":    NewSpuriousInitialPacketScenario(),
+		// "random_sequence":            NewRandomSequenceScenario(),
+		// "random_packet_sequence":     NewRandomPacketSequenceScenario(),
+		// "stream_reset_reordering":    NewStreamResetReorderingScenario(),
 	}
 }

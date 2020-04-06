@@ -203,17 +203,17 @@ func fuzz_individual_frame(frame *Frame) {
 			}
 
 		}
-	case MaxDataType:
-		fmt.Println("Fuzzing MaxData frame")
-		maxData_fields := [1]string{"MaximumData"}
-		for i := 0; i < 1; i++ {
-			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field := maxData_fields[i]; fuzz_field {
-				case "MaximumData":
-					(*frame).(*MaxDataFrame).MaximumData = uint64(R.Uint32())
-				}
-			}
-		}
+	// case MaxDataType:
+	// 	fmt.Println("Fuzzing MaxData frame")
+	// 	maxData_fields := [1]string{"MaximumData"}
+	// 	for i := 0; i < 1; i++ {
+	// 		if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
+	// 			switch fuzz_field := maxData_fields[i]; fuzz_field {
+	// 			case "MaximumData":
+	// 				(*frame).(*MaxDataFrame).MaximumData = uint64(R.Uint32())
+	// 			}
+	// 		}
+	// 	}
 	// case MaxStreamDataType:
 	// 	fmt.Println("Fuzzing MaxStreamData frame")
 	// 	maxStreamData_fields := [2]string{"StreamId", "MaximumData"}
@@ -227,19 +227,19 @@ func fuzz_individual_frame(frame *Frame) {
 	// 			}
 	// 		}
 	// 	}
-	case MaxStreamsType:
-		fmt.Println("Fuzzing MaxStreams frame")
-		maxStream_fields := [2]string{"StreamType", "MaximumStreams"}
-		for i := 0; i < 2; i++ {
-			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field := maxStream_fields[i]; fuzz_field {
-				case "StreamType":
-					(*frame).(*MaxStreamsFrame).StreamsType = R.Float32() < 0.5
-				case "MaximumStreams":
-					(*frame).(*MaxStreamsFrame).MaximumStreams = uint64(R.Uint32())
-				}
-			}
-		}
+	// case MaxStreamsType:
+	// 	fmt.Println("Fuzzing MaxStreams frame")
+	// 	maxStream_fields := [2]string{"StreamType", "MaximumStreams"}
+	// 	for i := 0; i < 2; i++ {
+	// 		if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
+	// 			switch fuzz_field := maxStream_fields[i]; fuzz_field {
+	// 			case "StreamType":
+	// 				(*frame).(*MaxStreamsFrame).StreamsType = R.Float32() < 0.5
+	// 			case "MaximumStreams":
+	// 				(*frame).(*MaxStreamsFrame).MaximumStreams = uint64(R.Uint32())
+	// 			}
+	// 		}
+	// 	}
 	case DataBlockedType:
 		fmt.Println("Fuzzing DataBlocked frame")
 		dataBlocked_fields := [1]string{"DataLimit"}
