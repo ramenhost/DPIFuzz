@@ -38,7 +38,7 @@ func (s *EchoScenario) Run(conn *Connection, trace *Trace, preferredPath string,
 
 	<-time.NewTimer(20 * time.Millisecond).C // Simulates the SendingAgent behaviour
 
-	payload := []byte(fmt.Sprintf("Echo Test. This should be interesting !"))
+	payload := []byte(fmt.Sprintf("Echo Test. This should be interesting"))
 
 	pp1 := NewProtectedPacket(conn)
 	pp1.Frames = append(pp1.Frames, NewStreamFrame(0, 0, payload, false))
@@ -46,8 +46,8 @@ func (s *EchoScenario) Run(conn *Connection, trace *Trace, preferredPath string,
 	pp2 := NewProtectedPacket(conn)
 	pp2.Frames = append(pp2.Frames, NewStreamFrame(0, uint64(len(payload)), []byte{}, true))
 
-	conn.DoSendPacket(pp1, EncryptionLevel1RTT)
 	conn.DoSendPacket(pp2, EncryptionLevel1RTT)
+	conn.DoSendPacket(pp1, EncryptionLevel1RTT)
 
 forLoop:
 	for {
@@ -62,7 +62,7 @@ forLoop:
 				for _, f := range p.(Framer).GetAll(StreamType) {
 					s := f.(*StreamFrame)
 					stream := conn.Streams.Get(s.StreamId)
-					fmt.Println(stream.ReadData)
+					fmt.Println("Stream Data: ", string(stream.ReadData))
 				}
 			}
 		case <-conn.ConnectionClosed:
