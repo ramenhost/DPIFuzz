@@ -6,6 +6,12 @@ import (
 	"unsafe"
 )
 
+const (
+	PA_DecryptionFailed  = 10
+	PA_LengthExceeded    = 11
+	PA_UnknownPacketType = 12
+)
+
 // The ParsingAgent is responsible for decrypting and parsing the payloads received in UDP datagrams. It also decrypts
 // the packet number if needed. Payloads that require a decryption level that is not available are put back into the
 // UnprocessedPayloads queue.
@@ -32,7 +38,7 @@ func (a *ParsingAgent) Run(conn *Connection) {
 				for off < len(ic.Payload) {
 					ciphertext := ic.Payload[off:]
 
-					if ciphertext[0] & 0x80 == 0x80 && bytes.Equal(ciphertext[1:5], []byte{0, 0, 0, 0}) {
+					if ciphertext[0]&0x80 == 0x80 && bytes.Equal(ciphertext[1:5], []byte{0, 0, 0, 0}) {
 						ctx := ic.PacketContext
 						ctx.PacketSize = uint16(len(ciphertext))
 						packet := ReadVersionNegotationPacket(bytes.NewReader(ciphertext))
@@ -51,7 +57,7 @@ func (a *ParsingAgent) Run(conn *Connection) {
 							a.Logger.Printf("Decrypting packet number of %s packet of length %d bytes", header.PacketType().String(), len(ciphertext))
 
 							firstByteMask := byte(0x1F)
-							if ciphertext[0] & 0x80 == 0x80 {
+							if ciphertext[0]&0x80 == 0x80 {
 								firstByteMask = 0x0F
 							}
 
@@ -59,7 +65,7 @@ func (a *ParsingAgent) Run(conn *Connection) {
 							mask := cryptoState.HeaderRead.Encrypt(sample, make([]byte, 5, 5))
 							ciphertext[0] ^= mask[0] & firstByteMask
 
-							pnLength := int(ciphertext[0] & 0x3) + 1
+							pnLength := int(ciphertext[0]&0x3) + 1
 
 							for i := 0; i < pnLength; i++ {
 								ciphertext[pnOffset+i] ^= mask[1+i]

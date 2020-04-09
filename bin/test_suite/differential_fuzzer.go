@@ -439,5 +439,6 @@ func getFuzzerResults(scenarioIds []string, hostsFilename *string, iterations in
 func GetCrashTrace(scenario scenarii.Scenario, host string) *qt.Trace {
 	trace := qt.NewTrace(scenario.Name(), scenario.Version(), host)
 	trace.ErrorCode = 254
+	trace.DiffCodes = append(trace.DiffCodes, 254)
 	return trace
 }

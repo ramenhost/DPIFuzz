@@ -42,6 +42,7 @@ type Connection struct {
 
 	ReceivedPacketHandler func([]byte, unsafe.Pointer)
 	SentPacketHandler     func([]byte, unsafe.Pointer)
+	RegisterDiffCode      func(int)
 
 	CryptoStreams CryptoStreams // TODO: It should be a parent class without closing states
 	Streams       Streams
@@ -79,11 +80,11 @@ type Connection struct {
 	MinRTT      uint64
 	SmoothedRTT uint64
 	RTTVar      uint64
-	AckQueue             map[PNSpace][]PacketNumber // Stores the packet numbers to be acked TODO: This should be a channel actually
-	Logger               *log.Logger
-	QLog 				 qlog.QLog
-	QLogTrace			 *qlog.Trace
-	QLogEvents			 chan *qlog.Event
+	AckQueue    map[PNSpace][]PacketNumber // Stores the packet numbers to be acked TODO: This should be a channel actually
+	Logger      *log.Logger
+	QLog        qlog.QLog
+	QLogTrace   *qlog.Trace
+	QLogEvents  chan *qlog.Event
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
