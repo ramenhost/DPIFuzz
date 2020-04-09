@@ -92,7 +92,6 @@ func main() {
 		}
 	} else {
 		trace.ErrorCode = 255
-		trace.DiffCodes = append(trace.DiffCodes, 255)
 		trace.Results["udp_error"] = err.Error()
 	}
 
