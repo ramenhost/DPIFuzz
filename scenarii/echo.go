@@ -1,13 +1,14 @@
 package scenarii
 
 import (
+	"bytes"
 	"fmt"
 	. "github.com/QUIC-Tracker/quic-tracker"
 	"strings"
-
 	"time"
 )
 
+//Scenario designed to specifically test echo server functionality
 const (
 	EC_TLSHandshakeFailed       = 1
 	EC_HostDidNotRespond        = 2
@@ -24,7 +25,7 @@ func NewEchoScenario() *EchoScenario {
 }
 func (s *EchoScenario) Run(conn *Connection, trace *Trace, preferredPath string, debug bool) {
 	if !strings.Contains(conn.ALPN, "hq") {
-		trace.ErrorCode = SOR_EndpointDoesNotSupportHQ
+		trace.ErrorCode = EC_EndpointDoesNotSupportHQ
 		return
 	}
 
@@ -62,7 +63,12 @@ forLoop:
 				for _, f := range p.(Framer).GetAll(StreamType) {
 					s := f.(*StreamFrame)
 					stream := conn.Streams.Get(s.StreamId)
-					fmt.Println("Stream Data: ", string(stream.ReadData))
+					if res := bytes.Compare(stream.ReadData, payload); res != 0 {
+						trace.ErrorCode = EC_PayloadChanged
+						fmt.Println("Not the same\n")
+					} else {
+						fmt.Println("No difference\n")
+					}
 				}
 			}
 		case <-conn.ConnectionClosed:
@@ -73,6 +79,6 @@ forLoop:
 	}
 
 	if !conn.Streams.Get(0).ReadClosed {
-		trace.ErrorCode = SOR_HostDidNotRespond
+		trace.ErrorCode = EC_HostDidNotRespond
 	}
 }

@@ -19,8 +19,6 @@ import (
 	"time"
 )
 
-// var host_list = [2]string{"quic.tech:8443", "fb.mvfst.net:443"}
-
 func main() {
 	hostsFilename := flag.String("hosts", "", "A tab-separated file containing hosts, the paths used to request data to be sent and ports for negotiating h3.")
 	scenarioName := flag.String("scenario", "", "A particular scenario to run. Run all of them if the parameter is missing.")
