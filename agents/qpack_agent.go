@@ -36,9 +36,18 @@ type QPACKAgent struct {
 }
 
 const (
-	QPACKNoStream uint64 = math.MaxUint64
-	QPACKEncoderStreamValue = 0x2
-	QPACKDecoderStreamValue = 0x3
+	QA_StreamTypeParse          = "qa_0"
+	QA_OpenAnotherEncoderStream = "qa_1"
+	QA_OpenAnotherDecoderStream = "qa_2"
+	QA_UnknownStreamType        = "qa_3"
+	QA_DecoderFail              = "qa_4"
+	QA_EncoderFail              = "qa_5"
+)
+
+const (
+	QPACKNoStream           uint64 = math.MaxUint64
+	QPACKEncoderStreamValue        = 0x2
+	QPACKDecoderStreamValue        = 0x3
 )
 
 func (a *QPACKAgent) Run(conn *Connection) {
@@ -93,9 +102,11 @@ func (a *QPACKAgent) Run(conn *Connection) {
 							stream := conn.Streams.Get(s.StreamId)
 							qpackStreamType, err := ReadVarInt(bytes.NewReader(stream.ReadData))
 							if err != nil {
+								conn.RegisterDiffCode(QA_StreamTypeParse)
 								a.Logger.Printf("Error when parsing stream type: %s\n", err.Error())
 							} else if qpackStreamType.Value == QPACKEncoderStreamValue {
 								if peerEncoderStreamId != QPACKNoStream {
+									conn.RegisterDiffCode(QA_OpenAnotherEncoderStream)
 									a.Logger.Printf("Peer attempted to open another encoder stream on stream %d\n", s.StreamId)
 									continue
 								}
@@ -108,6 +119,7 @@ func (a *QPACKAgent) Run(conn *Connection) {
 								conn.Streams.Get(s.StreamId).ReadChan.Register(peerEncoderStream)
 							} else if qpackStreamType.Value == QPACKDecoderStreamValue {
 								if peerDecoderStreamId != QPACKNoStream {
+									conn.RegisterDiffCode(QA_OpenAnotherDecoderStream)
 									a.Logger.Printf("Peer attempted to open another decoder stream on stream %d\n", s.StreamId)
 									continue
 								}
@@ -119,6 +131,7 @@ func (a *QPACKAgent) Run(conn *Connection) {
 								}
 								conn.Streams.Get(s.StreamId).ReadChan.Register(peerDecoderStream)
 							} else {
+								conn.RegisterDiffCode(QA_UnknownStreamType)
 								a.Logger.Printf("Unknown stream type %d, ignoring it\n", qpackStreamType.Value)
 							}
 						}
@@ -127,6 +140,7 @@ func (a *QPACKAgent) Run(conn *Connection) {
 			case i := <-peerEncoderStream:
 				data := i.([]byte)
 				if a.decoder.EncoderIn(data) {
+					conn.RegisterDiffCode(QA_DecoderFail)
 					a.Logger.Printf("Decoder failed on encoder stream input\n")
 					return
 				}
@@ -141,7 +155,8 @@ func (a *QPACKAgent) Run(conn *Connection) {
 				a.Logger.Printf("Fed %d bytes from the decoder stream to the encoder\n", len(data))
 				checkForDecodedHeaders()
 			case e := <-a.EncodeHeaders:
-				if a.encoder.StartHeaderBlock(e.StreamID, /*TODO*/ 0) {
+				if a.encoder.StartHeaderBlock(e.StreamID /*TODO*/, 0) {
+					conn.RegisterDiffCode(QA_EncoderFail)
 					a.Logger.Printf("Encoder failed to start header block\n")
 					return
 				}
@@ -163,7 +178,7 @@ func (a *QPACKAgent) Run(conn *Connection) {
 			case d := <-a.DecodeHeaders:
 				ret := a.decoder.HeaderIn(d.Headers, d.StreamID)
 				if ret < len(d.Headers) {
-					a.Logger.Printf("Decoder is blocked and waiting for encoder input before decoding the %d bytes remaining on stream %d\n", len(d.Headers) - ret, d.StreamID)
+					a.Logger.Printf("Decoder is blocked and waiting for encoder input before decoding the %d bytes remaining on stream %d\n", len(d.Headers)-ret, d.StreamID)
 				}
 				checkForDecodedHeaders()
 			case <-a.close:

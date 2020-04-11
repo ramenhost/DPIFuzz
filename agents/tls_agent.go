@@ -5,10 +5,15 @@ import (
 	. "github.com/QUIC-Tracker/quic-tracker"
 )
 
+const (
+	TA_TlsError        = "ta_0"
+	TA_ExtensionDecode = "ta_1"
+)
+
 type TLSStatus struct {
 	Completed bool
 	Packet
-	Error     error
+	Error error
 }
 
 // The TLSAgent is responsible of interacting with the TLS-1.3 stack. It waits on the CRYPTO streams for new data and
@@ -16,8 +21,8 @@ type TLSStatus struct {
 // DisableFrameSending. The TLSAgent will broadcast when new encryption or decryption levels are available.
 type TLSAgent struct {
 	BaseAgent
-	TLSStatus  Broadcaster //type: TLSStatus
-	ResumptionTicket Broadcaster //type: []byte
+	TLSStatus           Broadcaster //type: TLSStatus
+	ResumptionTicket    Broadcaster //type: []byte
 	DisableFrameSending bool
 }
 
@@ -79,6 +84,7 @@ func (a *TLSAgent) Run(conn *Connection) {
 						tlsOutput, notCompleted, err := conn.Tls.HandleMessage(handshakeData, PNSpaceToEpoch[packet.PNSpace()])
 
 						if err != nil {
+							conn.RegisterDiffCode(TA_TlsError)
 							a.Logger.Printf("TLS error occured: %s\n", err.Error())
 							a.TLSStatus.Submit(TLSStatus{false, packet, err})
 						}
@@ -112,6 +118,7 @@ func (a *TLSAgent) Run(conn *Connection) {
 
 							err = conn.TLSTPHandler.ReceiveExtensionData(conn.Tls.ReceivedQUICTransportParameters())
 							if err != nil {
+								conn.RegisterDiffCode(TA_ExtensionDecode)
 								a.Logger.Printf("Failed to decode extension data: %s\n", err.Error())
 								a.TLSStatus.Submit(TLSStatus{false, packet, err})
 							} else {

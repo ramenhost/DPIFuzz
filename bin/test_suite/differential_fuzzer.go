@@ -297,13 +297,16 @@ func main() {
 
 					// out, _ := json.Marshal(trace.Results["error"])
 					out_1, _ := json.Marshal(trace.ErrorCode)
-
+					out_2, _ := json.Marshal(trace.DiffCodes)
 					// if len(out) != 0 {
 					// 	traceFile.Write(out)
 					// }
 
 					if len(out_1) != 0 {
 						traceFile.Write(out_1)
+					}
+					if len(out_2) != 0 {
+						traceFile.Write(out_2)
 					}
 
 				}()

@@ -9,6 +9,14 @@ import (
 	"unsafe"
 )
 
+const (
+	SOA_UdpSocket = "soa_0"
+	SOA_EcnValue  = "soa_1"
+	SOA_RECVTOS   = "soa_2"
+	SOA_TOS       = "soa_3"
+	SOA_EcnConfig = "soa_4"
+)
+
 // The SocketAgent is responsible for receiving the UDP payloads off the socket and putting them in the decryption queue.
 // If configured using ConfigureECN(), it will also mark the packet as with ECN(0) and report the ECN status of
 // the corresponding IP packet received.
@@ -34,6 +42,7 @@ func (a *SocketAgent) Run(conn *Connection) {
 			i, oobn, _, addr, err := conn.UdpConnection.ReadMsgUDP(recBuf, oob)
 
 			if err != nil {
+				a.conn.RegisterDiffCode(SOA_UdpSocket)
 				a.Logger.Println("Closing UDP socket because of error", err.Error())
 				select {
 				case <-recChan:
@@ -55,6 +64,7 @@ func (a *SocketAgent) Run(conn *Connection) {
 			if a.ecn {
 				ecn, err := findECNValue(oob[:oobn])
 				if err != nil {
+					a.conn.RegisterDiffCode(SOA_EcnValue)
 					a.Logger.Println(err.Error())
 				}
 				ecn = ecn & 0x03
@@ -103,11 +113,13 @@ func (a *SocketAgent) ConfigureECN() error {
 		err = u.SetRECVTOS(int(fd))
 		if err != nil {
 			a.ecn = false
+			a.conn.RegisterDiffCode(SOA_RECVTOS)
 			a.Logger.Printf("Error when setting RECVTOS: %s\n", err.Error())
 			return
 		}
 		err = syscall.SetsockoptInt(int(fd), syscall.IPPROTO_IP, syscall.IP_TOS, 2) //INET_ECN_ECT_0  // TODO: This should actually be the responsability of the SendingAgent
 		if err != nil {
+			a.conn.RegisterDiffCode(SOA_TOS)
 			a.Logger.Printf("Error when setting TOS: %s\n", err.Error())
 		}
 		a.ecn = err == nil
@@ -117,6 +129,7 @@ func (a *SocketAgent) ConfigureECN() error {
 		return err
 	}
 	if !a.ecn {
+		a.conn.RegisterDiffCode(SOA_EcnConfig)
 		return errors.New("could not configure ecn")
 	}
 	return nil
@@ -124,15 +137,15 @@ func (a *SocketAgent) ConfigureECN() error {
 
 type cmsgHdr struct {
 	cLength uint64
-	cLevel int32
-	cType int32
+	cLevel  int32
+	cType   int32
 }
 
 func findECNValue(oob []byte) (byte, error) {
 	for len(oob) > 0 {
 		hdr := (*cmsgHdr)(unsafe.Pointer(&oob[0]))
 		if hdr.cLevel == 0 && hdr.cType == 1 {
-			return oob[hdr.cLength - 1], nil
+			return oob[hdr.cLength-1], nil
 		}
 		oob = oob[hdr.cLength:]
 	}

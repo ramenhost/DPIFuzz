@@ -24,7 +24,7 @@ type Trace struct {
 	QLog            interface{}               `json:"qlog"`       // The QLog trace captured during the test run
 	ClientRandom    []byte                    `json:"client_random"`
 	Secrets         map[pigotls.Epoch]Secrets `json:"secrets"`
-	DiffCodes       []int                     `json:"diff_codes"` //A slice to store points of potential differences when comparing implementations
+	DiffCodes       []string                  `json:"diff_codes"` //A slice to store points of potential differences when comparing implementations
 }
 
 type Secrets struct {
@@ -78,7 +78,7 @@ func (t *Trace) AttachTo(conn *Connection) {
 	conn.SentPacketHandler = func(data []byte, origin unsafe.Pointer) {
 		t.Stream = append(t.Stream, TracePacket{Direction: ToServer, Timestamp: time.Now().UnixNano() / 1e6, Data: data, Pointer: origin})
 	}
-	conn.RegisterDiffCode = func(code int) {
+	conn.RegisterDiffCode = func(code string) {
 		t.DiffCodes = append(t.DiffCodes, code)
 	}
 }

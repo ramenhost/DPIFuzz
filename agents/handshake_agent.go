@@ -11,6 +11,12 @@ import (
 	. "github.com/QUIC-Tracker/quic-tracker"
 )
 
+const (
+	HA_ConnectionClose   = "ha_0"
+	HA_ConnectionRefused = "ha_1"
+	HA_TlsStatus         = "ha_2"
+)
+
 var SpuriousScenario bool = false
 
 type HandshakeStatus struct {
@@ -88,6 +94,7 @@ func (a *HandshakeAgent) Run(conn *Connection) {
 				case Framer:
 					if p.Contains(ConnectionCloseType) || p.Contains(ApplicationCloseType) {
 						a.Logger.Println("The connection was closed before the handshake completed")
+						conn.RegisterDiffCode(HA_ConnectionClose)
 						a.HandshakeStatus.Submit(HandshakeStatus{false, p, errors.New("the connection was closed before the handshake completed")})
 						return
 					}
@@ -128,12 +135,14 @@ func (a *HandshakeAgent) Run(conn *Connection) {
 			case i := <-tlsStatus:
 				s := i.(TLSStatus)
 				if s.Error != nil {
+					conn.RegisterDiffCode(HA_TlsStatus)
 					a.HandshakeStatus.Submit(HandshakeStatus{s.Completed, s.Packet, s.Error})
 				}
 				tlsCompleted = s.Completed
 				tlsPacket = s.Packet
 			case i := <-socketStatus:
 				if strings.Contains(i.(error).Error(), "connection refused") {
+					conn.RegisterDiffCode(HA_ConnectionRefused)
 					a.HandshakeStatus.Submit(HandshakeStatus{false, nil, i.(error)})
 					return
 				}

@@ -7,15 +7,24 @@ import (
 	"math"
 )
 
+const (
+	HTA_StreamParse        = "hta_0"
+	HTA_PeerOpenAttempt    = "hta_1"
+	HTA_UnknownStream      = "hta_2"
+	HTA_NoMatchingResponse = "hta_3"
+	HTA_NoMatchingRequest  = "hta_4"
+	HTA_MissingBytes       = "hta_5"
+)
+
 type HTTP3Response struct {
 	HTTP09Response
-	headers  []HTTPHeader
+	headers []HTTPHeader
 
 	fin              bool
 	headersRemaining int
 	totalProcessed   uint64
 	totalReceived    uint64
-	responseChan	 chan HTTPResponse
+	responseChan     chan HTTPResponse
 }
 
 func (r HTTP3Response) Complete() bool {
@@ -100,9 +109,11 @@ func (a *HTTP3Agent) Run(conn *Connection) {
 							httpStreamType, err := ReadVarInt(bytes.NewReader(stream.ReadData))
 							if err != nil {
 								a.Logger.Printf("Error when parsing stream type: %s\n", err.Error())
+								a.conn.RegisterDiffCode(HTA_StreamParse)
 							} else if httpStreamType.Value == http3.StreamTypeControl {
 								if a.peerControlStreamID != HTTPNoStream {
 									a.Logger.Printf("Peer attempted to open another control stream on stream %d\n", s.StreamId)
+									a.conn.RegisterDiffCode(HTA_PeerOpenAttempt)
 									continue
 								}
 								a.peerControlStreamID = s.StreamId
@@ -113,6 +124,7 @@ func (a *HTTP3Agent) Run(conn *Connection) {
 								a.Logger.Printf("Peer opened control stream on stream %d\n", s.StreamId)
 							} else {
 								a.Logger.Printf("Unknown stream type %d, ignoring it\n", httpStreamType.Value)
+								a.conn.RegisterDiffCode(HTA_UnknownStream)
 							}
 						}
 					}
@@ -134,6 +146,7 @@ func (a *HTTP3Agent) Run(conn *Connection) {
 					var ok bool
 					if response, ok = a.responseBuffer[fr.StreamID]; !ok {
 						a.Logger.Printf("Received encoded headers for stream %d, but no matching response found\n", fr.StreamID)
+						a.conn.RegisterDiffCode(HTA_NoMatchingResponse)
 						continue
 					}
 					response.headersRemaining++
@@ -143,6 +156,7 @@ func (a *HTTP3Agent) Run(conn *Connection) {
 					var ok bool
 					if response, ok = a.responseBuffer[fr.StreamID]; !ok {
 						a.Logger.Printf("%s frame for stream %d does not match any request\n", f.Name(), fr.StreamID)
+						a.conn.RegisterDiffCode(HTA_NoMatchingRequest)
 						continue
 					}
 					response.body = append(a.responseBuffer[fr.StreamID].body, f.Payload...)
@@ -181,6 +195,7 @@ func (a *HTTP3Agent) Run(conn *Connection) {
 				var ok bool
 				if response, ok = a.responseBuffer[dHdrs.StreamID]; !ok {
 					a.Logger.Printf("Received decoded headers for stream %d, but no matching response found\n", dHdrs.StreamID)
+					a.conn.RegisterDiffCode(HTA_NoMatchingResponse)
 					continue
 				}
 				response.headersRemaining--
@@ -207,13 +222,14 @@ func (a *HTTP3Agent) attemptDecoding(streamID uint64, buffer *bytes.Buffer) {
 	l, err2 := ReadVarInt(r)
 
 	if err1 == nil && err2 == nil {
-		if buffer.Len() >= t.Length + l.Length + int(l.Value) {
+		if buffer.Len() >= t.Length+l.Length+int(l.Value) {
 			r = bytes.NewReader(buffer.Next(t.Length + l.Length + int(l.Value)))
 			f := http3.ReadHTTPFrame(r)
 			a.FrameReceived.Submit(HTTP3FrameReceived{streamID, f})
 			a.attemptDecoding(streamID, buffer)
 		} else {
 			a.Logger.Printf("Unable to parse %d byte-long frame on stream %d, %d bytes missing\n", t.Value, streamID, int(l.Value)-(buffer.Len()-l.Length-t.Length))
+			a.conn.RegisterDiffCode(HTA_MissingBytes)
 		}
 	}
 }

@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	PA_DecryptionFailed  = 10
-	PA_LengthExceeded    = 11
-	PA_UnknownPacketType = 12
+	PA_DecryptionFailed  = "pa_0"
+	PA_LengthExceeded    = "pa_1"
+	PA_UnknownPacketType = "pa_2"
 )
 
 // The ParsingAgent is responsible for decrypting and parsing the payloads received in UDP datagrams. It also decrypts
@@ -92,12 +92,14 @@ func (a *ParsingAgent) Run(conn *Connection) {
 
 						if hLen+pLen > len(ciphertext) {
 							a.Logger.Printf("Payload length %d is past the %d received bytes, has PN decryption failed ? Aborting", hLen+pLen, len(ciphertext))
+							a.conn.RegisterDiffCode(PA_LengthExceeded)
 							break packetSelect
 						}
 
 						payload := cryptoState.Read.Decrypt(ciphertext[hLen:hLen+pLen], uint64(header.PacketNumber()), ciphertext[:hLen])
 						if payload == nil {
 							a.Logger.Printf("Could not decrypt packet {type=%s, number=%d}\n", header.PacketType().String(), header.PacketNumber())
+							a.conn.RegisterDiffCode(PA_DecryptionFailed)
 							break packetSelect
 						}
 
@@ -114,6 +116,7 @@ func (a *ParsingAgent) Run(conn *Connection) {
 						payload := cryptoState.Read.Decrypt(ciphertext[hLen:], uint64(header.PacketNumber()), ciphertext[:hLen])
 						if payload == nil {
 							a.Logger.Printf("Could not decrypt packet {type=%s, number=%d}\n", header.PacketType().String(), header.PacketNumber())
+							a.conn.RegisterDiffCode(PA_DecryptionFailed)
 							break packetSelect
 						}
 						cleartext = append(append(cleartext, ic.Payload[off:off+hLen]...), payload...)
@@ -125,6 +128,7 @@ func (a *ParsingAgent) Run(conn *Connection) {
 						consumed = len(ic.Payload)
 					default:
 						a.Logger.Printf("Packet type is unknown, the first byte is %x\n", ciphertext[0])
+						a.conn.RegisterDiffCode(PA_UnknownPacketType)
 						break packetSelect
 					}
 

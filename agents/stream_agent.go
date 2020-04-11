@@ -5,6 +5,16 @@ import (
 	. "github.com/QUIC-Tracker/quic-tracker"
 )
 
+const (
+	SA_CloseStream    = "sa_0"
+	SA_CloseUniStream = "sa_1"
+	SA_ResetStream    = "sa_2"
+	SA_ResetUniStream = "sa_3"
+	SA_StopServerSend = "sa_4"
+	SA_StopClientSend = "sa_5"
+	SA_WriteClose     = "sa_6"
+)
+
 type StreamAgent struct {
 	FrameProducingAgent
 	conn             *Connection
@@ -48,8 +58,8 @@ func (a *StreamAgent) Run(conn *Connection) {
 				var frames []Frame
 				for streamId, buf := range a.streamBuffers {
 					stream := conn.Streams.Get(streamId)
-					f := NewStreamFrame(streamId, stream.WriteOffset - uint64(len(buf)), nil, false)
-					length := Min(len(buf) + int(f.FrameLength()), args.availableSpace)
+					f := NewStreamFrame(streamId, stream.WriteOffset-uint64(len(buf)), nil, false)
+					length := Min(len(buf)+int(f.FrameLength()), args.availableSpace)
 					if length > int(f.FrameLength()) {
 						f.StreamData = buf[:length-int(f.FrameLength())]
 						f.LenBit = true
@@ -79,12 +89,14 @@ func (a *StreamAgent) close(streamId uint64) error {
 	s := a.conn.Streams.Get(streamId)
 	if IsClient(streamId) || IsBidi(streamId) {
 		if s.WriteClosed {
+			a.conn.RegisterDiffCode(SA_CloseStream)
 			return errors.New("cannot close already closed stream")
 		}
 		s.WriteCloseOffset = s.WriteOffset
 		a.conn.FrameQueue.Submit(QueuedFrame{NewStreamFrame(streamId, s.WriteOffset, nil, true), EncryptionLevelBestAppData})
 		return nil
 	}
+	a.conn.RegisterDiffCode(SA_CloseUniStream)
 	return errors.New("cannot close server uni stream")
 }
 
@@ -92,6 +104,7 @@ func (a *StreamAgent) reset(streamId uint64, appErrorCode uint64) error {
 	s := a.conn.Streams.Get(streamId)
 	if IsClient(streamId) || IsBidi(streamId) {
 		if s.WriteClosed {
+			a.conn.RegisterDiffCode(SA_ResetStream)
 			return errors.New("cannot reset already closed stream")
 		}
 		s.WriteCloseOffset = s.WriteOffset
@@ -99,17 +112,20 @@ func (a *StreamAgent) reset(streamId uint64, appErrorCode uint64) error {
 		a.conn.FrameQueue.Submit(QueuedFrame{&ResetStream{streamId, appErrorCode, s.WriteOffset}, EncryptionLevelBestAppData})
 		return nil
 	}
+	a.conn.RegisterDiffCode(SA_ResetUniStream)
 	return errors.New("cannot reset server uni stream")
 }
 
 func (a *StreamAgent) stopSending(streamId uint64, appErrorCode uint64) error {
 	if IsServer(streamId) || IsBidi(streamId) {
 		if _, present := a.conn.Streams.Has(streamId); !present && IsServer(streamId) {
+			a.conn.RegisterDiffCode(SA_StopServerSend)
 			return errors.New("cannot ask to stop sending on non-ready server stream")
 		}
 		a.conn.FrameQueue.Submit(QueuedFrame{&StopSendingFrame{streamId, appErrorCode}, EncryptionLevelBestAppData})
 		return nil
 	}
+	a.conn.RegisterDiffCode(SA_StopClientSend)
 	return errors.New("cannot ask to stop sending on a client uni stream")
 }
 
@@ -117,6 +133,7 @@ func (a *StreamAgent) send(streamId uint64, data []byte, close bool) error {
 	s := a.conn.Streams.Get(streamId)
 
 	if s.WriteClosed {
+		a.conn.RegisterDiffCode(SA_WriteClose)
 		return errors.New("cannot write on closed stream")
 	}
 	s.WriteOffset += uint64(len(data))

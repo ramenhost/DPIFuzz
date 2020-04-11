@@ -5,6 +5,10 @@ import (
 	. "github.com/QUIC-Tracker/quic-tracker"
 )
 
+const (
+	FA_ByteBuffer = "fa_0"
+)
+
 var FramePriority = map[FrameType]int{
 	ConnectionCloseType:    1,
 	ApplicationCloseType:   2,
@@ -135,6 +139,7 @@ func (a *FrameQueueAgent) Run(conn *Connection) {
 
 				if i != nil && args.availableSpace < int(i.(Frame).FrameLength()) {
 					a.Logger.Printf("Unable to put %d-byte frame into %d-byte buffer\n", i.(Frame).FrameLength(), args.availableSpace)
+					a.conn.RegisterDiffCode(FA_ByteBuffer)
 					a.conn.PreparePacket.Submit(args.level)
 				}
 				a.frames <- frames

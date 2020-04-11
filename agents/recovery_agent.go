@@ -7,13 +7,19 @@ import (
 	"time"
 )
 
+const (
+	RA_RetryPacket   = "ra_0"
+	RA_VNPacket      = "ra_1"
+	RA_UnknownPacket = "ra_2"
+)
+
 // The RecoveryAgent is responsible of retransmitting frames that are part of packets considered as lost. It currently
 // implements a simpler version of the Fast Retransmit mechanism and a linear Retransmission Timeout alarm.
 type RecoveryAgent struct {
 	BaseAgent
 	conn                 *Connection
 	retransmissionBuffer map[PNSpace]map[PacketNumber]RetransmittableFrames
-	packetsSent 		 map[PNSpace]map[PacketNumber]bool
+	packetsSent          map[PNSpace]map[PacketNumber]bool
 	TimerValue           time.Duration
 }
 
@@ -81,9 +87,11 @@ func (a *RecoveryAgent) Run(conn *Connection) {
 						a.Stop()
 					}
 				case *RetryPacket:
+					a.conn.RegisterDiffCode(RA_RetryPacket)
 					a.Logger.Println("Received a Retry packet, emptying Initial retransmit buffer")
 					a.retransmissionBuffer[PNSpaceInitial] = make(map[PacketNumber]RetransmittableFrames)
 				case *VersionNegotiationPacket:
+					a.conn.RegisterDiffCode(RA_VNPacket)
 					a.Logger.Println("Received a VN packet, emptying Initial retransmit buffer")
 					a.retransmissionBuffer[PNSpaceInitial] = make(map[PacketNumber]RetransmittableFrames)
 				}
@@ -137,6 +145,7 @@ func (a *RecoveryAgent) Run(conn *Connection) {
 
 func (a *RecoveryAgent) PacketAcknowledged(packet PacketNumber, space PNSpace) {
 	if _, ok := a.packetsSent[space][packet]; !ok {
+		a.conn.RegisterDiffCode(RA_UnknownPacket)
 		a.Logger.Printf("Unknown packet %d (%s) was acknowledged\n", packet, space)
 		return
 	}

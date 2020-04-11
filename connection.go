@@ -42,7 +42,7 @@ type Connection struct {
 
 	ReceivedPacketHandler func([]byte, unsafe.Pointer)
 	SentPacketHandler     func([]byte, unsafe.Pointer)
-	RegisterDiffCode      func(int)
+	RegisterDiffCode      func(string)
 
 	CryptoStreams CryptoStreams // TODO: It should be a parent class without closing states
 	Streams       Streams
