@@ -433,7 +433,7 @@ func (c *Connection) EncodeAndEncrypt(packet Packet, level EncryptionLevel) []by
 	if list[action] == "fuzz_frame" && fuzz_decision == true && FuzzSession == true && packet.PNSpace() == PNSpaceAppData {
 		fuzz_frame(&packet, level)
 	}
-	fmt.Println(packet.PNSpace())
+	// fmt.Println(packet.PNSpace())
 	switch packet.PNSpace() {
 	case PNSpaceInitial, PNSpaceHandshake, PNSpaceAppData:
 		cryptoState := c.CryptoStates[level]
@@ -455,7 +455,7 @@ func (c *Connection) EncodeAndEncrypt(packet Packet, level EncryptionLevel) []by
 		if list[action] == "fuzz_payload" && fuzz_decision == true && FuzzSession == true && packet.PNSpace() == PNSpaceAppData {
 			payload = fuzz_payload(payload)
 		}
-		fmt.Println(len(payload))
+		// fmt.Println(len(payload))
 		if h, ok := packet.Header().(*LongHeader); ok {
 			h.Length = NewVarInt(uint64(h.TruncatedPN().Length + len(payload) + cryptoState.Write.Overhead()))
 		}
