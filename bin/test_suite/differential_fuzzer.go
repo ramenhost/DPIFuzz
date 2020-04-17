@@ -296,19 +296,19 @@ func main() {
 					}
 
 					// out, _ := json.Marshal(trace.Results["error"])
-					out_1, _ := json.Marshal(trace.ErrorCode)
-					out_2, _ := json.Marshal(trace.DiffCodes)
-					// if len(out) != 0 {
-					// 	traceFile.Write(out)
-					// }
-
-					if len(out_1) != 0 {
-						traceFile.Write(out_1)
+					out_3, _ := json.Marshal(trace.Results["StreamDataReassembly"])
+					if string(out_3) == "null" {
+						out_1, _ := json.Marshal(trace.ErrorCode)
+						out_2, _ := json.Marshal(trace.DiffCodes)
+						if len(out_1) != 0 {
+							traceFile.Write(out_1)
+						}
+						if len(out_2) != 0 {
+							traceFile.Write(out_2)
+						}
+					} else {
+						traceFile.Write(out_3)
 					}
-					if len(out_2) != 0 {
-						traceFile.Write(out_2)
-					}
-
 				}()
 			}
 			file.Seek(0, 0)

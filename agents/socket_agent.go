@@ -42,7 +42,7 @@ func (a *SocketAgent) Run(conn *Connection) {
 			i, oobn, _, addr, err := conn.UdpConnection.ReadMsgUDP(recBuf, oob)
 
 			if err != nil {
-				a.conn.RegisterDiffCode(SOA_UdpSocket)
+				//a.conn.RegisterDiffCode(SOA_UdpSocket)
 				a.Logger.Println("Closing UDP socket because of error", err.Error())
 				select {
 				case <-recChan:
@@ -64,7 +64,7 @@ func (a *SocketAgent) Run(conn *Connection) {
 			if a.ecn {
 				ecn, err := findECNValue(oob[:oobn])
 				if err != nil {
-					a.conn.RegisterDiffCode(SOA_EcnValue)
+					//a.conn.RegisterDiffCode(SOA_EcnValue)
 					a.Logger.Println(err.Error())
 				}
 				ecn = ecn & 0x03
@@ -113,13 +113,13 @@ func (a *SocketAgent) ConfigureECN() error {
 		err = u.SetRECVTOS(int(fd))
 		if err != nil {
 			a.ecn = false
-			a.conn.RegisterDiffCode(SOA_RECVTOS)
+			//a.conn.RegisterDiffCode(SOA_RECVTOS)
 			a.Logger.Printf("Error when setting RECVTOS: %s\n", err.Error())
 			return
 		}
 		err = syscall.SetsockoptInt(int(fd), syscall.IPPROTO_IP, syscall.IP_TOS, 2) //INET_ECN_ECT_0  // TODO: This should actually be the responsability of the SendingAgent
 		if err != nil {
-			a.conn.RegisterDiffCode(SOA_TOS)
+			//a.conn.RegisterDiffCode(SOA_TOS)
 			a.Logger.Printf("Error when setting TOS: %s\n", err.Error())
 		}
 		a.ecn = err == nil
@@ -129,7 +129,7 @@ func (a *SocketAgent) ConfigureECN() error {
 		return err
 	}
 	if !a.ecn {
-		a.conn.RegisterDiffCode(SOA_EcnConfig)
+		//a.conn.RegisterDiffCode(SOA_EcnConfig)
 		return errors.New("could not configure ecn")
 	}
 	return nil

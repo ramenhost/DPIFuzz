@@ -141,8 +141,8 @@ func fuzz_individual_frame(frame *Frame) {
 		for i := 0; i < 3; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := reset_fields[i]; fuzz_field {
-				case "StreamId":
-					(*frame).(*ResetStream).StreamId = uint64(R.Uint32())
+				// case "StreamId":
+				// 	(*frame).(*ResetStream).StreamId = uint64(R.Uint32())
 				case "ApplicationErrorCode":
 					(*frame).(*ResetStream).ApplicationErrorCode = uint64(R.Uint32())
 				case "FinalSize":
@@ -192,17 +192,17 @@ func fuzz_individual_frame(frame *Frame) {
 					(*frame).(*StreamFrame).LenBit = R.Float32() < 0.5
 				case "OffBit":
 					(*frame).(*StreamFrame).OffBit = R.Float32() < 0.5
-				case "StreamId":
-					(*frame).(*StreamFrame).StreamId = uint64(R.Uint32())
+				// case "StreamId":
+				// 	(*frame).(*StreamFrame).StreamId = uint64(R.Uint32())
 				case "Offset":
 					(*frame).(*StreamFrame).Offset = uint64(R.Uint32())
-					// case "Length":
-					// 	//does it make sense to fuzz both the length field and the stream data field ? It will definitely lead to a conflict
-					// 	(*frame).(*StreamFrame).Length = uint64(R.Uint32())
-					// case "StreamData":
-					// 	token := make([]byte, len((*frame).(*StreamFrame).StreamData))
-					// 	R.Read(token)
-					// 	(*frame).(*StreamFrame).StreamData = token
+				case "Length":
+					//does it make sense to fuzz both the length field and the stream data field ? It will definitely lead to a conflict
+					(*frame).(*StreamFrame).Length = uint64(R.Uint32())
+				case "StreamData":
+					token := make([]byte, len((*frame).(*StreamFrame).StreamData))
+					R.Read(token)
+					(*frame).(*StreamFrame).StreamData = token
 
 				}
 			}
@@ -251,7 +251,7 @@ func fuzz_individual_frame(frame *Frame) {
 		for i := 0; i < 1; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := dataBlocked_fields[i]; fuzz_field {
-				case "StreamType":
+				case "DataLimit":
 					(*frame).(*DataBlockedFrame).DataLimit = uint64(R.Uint32())
 				}
 			}
@@ -262,8 +262,8 @@ func fuzz_individual_frame(frame *Frame) {
 		for i := 0; i < 2; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := streamDataBlocked_fields[i]; fuzz_field {
-				case "StreamId":
-					(*frame).(*StreamDataBlockedFrame).StreamId = uint64(R.Uint32())
+				// case "StreamId":
+				// 	(*frame).(*StreamDataBlockedFrame).StreamId = uint64(R.Uint32())
 				case "StreamDataLimit":
 					(*frame).(*StreamDataBlockedFrame).StreamDataLimit = uint64(R.Uint32())
 				}

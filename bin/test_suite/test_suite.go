@@ -26,7 +26,8 @@ func main() {
 	logsDirectory := flag.String("logs-directory", "/tmp", "Location of the logs.")
 	netInterface := flag.String("interface", "", "The interface to listen to when capturing pcaps. Lets tcpdump decide if not set.")
 	parallel := flag.Bool("parallel", false, "Runs each scenario against multiple hosts at the same time.")
-	maxInstances := flag.Int("max-instances", 10, "Limits the number of parallel scenario runs.") //this actually specifies the maximum number of hosts for which a particular scenario can be run simultaneously
+	parallelScenarios := flag.Bool("parallel-scenarios", false, "Run multiple scenarios against multiple hosts in parallel. Enable this only if all the test servers can support multiple connections")
+	maxInstances := flag.Int("max-instances", 10, "Limits the number of parallel scenario runs.")
 	randomise := flag.Bool("randomise", false, "Randomise the execution order of scenarii")
 	timeout := flag.Int("timeout", 10, "The amount of time in seconds spent when completing a test. Defaults to 10. When set to 0, each test ends as soon as possible.")
 	debug := flag.Bool("debug", false, "Enables debugging information to be printed.")
@@ -74,24 +75,26 @@ func main() {
 		}
 		close(resultsAgg)
 	}()
+
+	if !*parallel && !*parallelScenarios {
+		*maxInstances = 1
+	}
+
 	semaphore := make(chan bool, *maxInstances)
 	for i := 0; i < *maxInstances; i++ {
 		semaphore <- true
 	}
 	wg := &sync.WaitGroup{}
+
 	for _, id := range scenarioIds {
 		if *scenarioName != "" && *scenarioName != id {
 			continue
 		}
-		scenario := scenariiInstances[id]
 
-		if !*parallel {
-			*maxInstances = 1
-		}
-		//the semaphore ensures that even when the number of hosts listed is greater than *maxInstances, the number of parallel scenarios run does not exceed *maxInstances
-		sname := id
+		scenarioId := id
+		scenario := scenariiInstances[scenarioId]
 
-		os.MkdirAll(p.Join(*logsDirectory, sname), os.ModePerm)
+		os.MkdirAll(p.Join(*logsDirectory, scenarioId), os.ModePerm)
 
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
@@ -127,7 +130,7 @@ func main() {
 				}
 				outputFile.Close()
 
-				logFile, err := os.Create(p.Join(*logsDirectory, id, host))
+				logFile, err := os.Create(p.Join(*logsDirectory, scenarioId, host))
 				if err != nil {
 					println(err.Error())
 					return
@@ -137,7 +140,7 @@ func main() {
 				crashTrace := GetCrashTrace(scenario, host) // Prepare one just in case
 				start := time.Now()
 
-				args := []string{"run", scenarioRunnerFilename, "-host", host, "-path", path, "-alpn", preferredALPN, "-scenario", sname, "-interface", *netInterface, "-output", outputFile.Name(), "-timeout", strconv.Itoa(*timeout)}
+				args := []string{"run", scenarioRunnerFilename, "-host", host, "-path", path, "-alpn", preferredALPN, "-scenario", scenarioId, "-interface", *netInterface, "-output", outputFile.Name(), "-timeout", strconv.Itoa(*timeout)}
 				if *debug {
 					args = append(args, "-debug")
 				}
@@ -169,9 +172,12 @@ func main() {
 				result <- &trace
 			}()
 		}
-
+		if !*parallelScenarios {
+			wg.Wait()
+		}
 		file.Seek(0, 0)
 	}
+
 	wg.Wait()
 	close(result)
 	<-resultsAgg

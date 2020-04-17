@@ -44,10 +44,8 @@ func (s *SpuriousInitialPacketScenario) Run(conn *qt.Connection, trace *qt.Trace
 			handshakeAgent.HandshakeStatus.Unregister(handshakeStatus)
 			s.Finished()
 		case <-conn.ConnectionClosed:
-			agents.SpuriousScenario = false
 			return
 		case <-s.Timeout():
-			agents.SpuriousScenario = false
 			if !status.Completed {
 				if trace.ErrorCode == 0 {
 					trace.MarkError(H_Timeout, "", nil)
