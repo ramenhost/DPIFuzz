@@ -317,7 +317,7 @@ func main() {
 	wg.Wait()
 
 	//check for the number of hosts first. Proceed if > 1
-	resultList := getFuzzerResults(scenarioIds, hostsFilename, *iterations, scenariiInstances, maxInstances, traceDirectory)
+	resultList := getFuzzerResults(scenarioName, scenarioIds, hostsFilename, *iterations, scenariiInstances, maxInstances, traceDirectory)
 
 	//iterate and print map here if required
 	seedMap := make(map[string]int64)
@@ -353,7 +353,7 @@ func main() {
 	return
 }
 
-func getFuzzerResults(scenarioIds []string, hostsFilename *string, iterations int, scenariiInstances map[string]scenarii.Scenario, maxInstances *int, traceDirectory *string) []string {
+func getFuzzerResults(scenarioName *string, scenarioIds []string, hostsFilename *string, iterations int, scenariiInstances map[string]scenarii.Scenario, maxInstances *int, traceDirectory *string) []string {
 	var result []string
 
 	s := NewConcurrentSlice()
@@ -373,7 +373,9 @@ func getFuzzerResults(scenarioIds []string, hostsFilename *string, iterations in
 		semaphore <- true
 	}
 	for _, id := range scenarioIds {
-
+		if *scenarioName != "" && *scenarioName != id {
+			continue
+		}
 		scenario := scenariiInstances[id]
 		sname := id
 

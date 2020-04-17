@@ -1,2 +1,2 @@
-quic.tech:8443	/index.html	8443	hq
+quic.tech:8443	/	8443	hq
 fb.mvfst.net:443	/	443	hq
