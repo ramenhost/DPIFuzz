@@ -1,4 +1,4 @@
-A test suite for QUIC
+A Fuzzing Framework for the QUIC Protocol
 =====================
 
 .. image:: https://godoc.org/github.com/QUIC-Tracker/quic-tracker?status.svg
