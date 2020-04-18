@@ -167,6 +167,14 @@ func main() {
 	}
 	defer file.Close()
 
+	//Determining the number of hosts
+	var hostCount int = 0
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		hostCount += 1
+	}
+	file.Seek(0, 0)
+
 	scenariiInstances := scenarii.GetAllScenarii()
 
 	m := NewConcurrentMap() //map to store seed values with scenario name and iteration number
@@ -317,38 +325,41 @@ func main() {
 	wg.Wait()
 
 	//check for the number of hosts first. Proceed if > 1
-	resultList := getFuzzerResults(scenarioName, scenarioIds, hostsFilename, *iterations, scenariiInstances, maxInstances, traceDirectory)
+	if hostCount > 1 {
 
-	//iterate and print map here if required
-	seedMap := make(map[string]int64)
-	for val := range m.Iter() {
-		seedMap[val.Key] = val.Value.(int64)
-	}
+		resultList := getFuzzerResults(scenarioName, scenarioIds, hostsFilename, *iterations, scenariiInstances, maxInstances, traceDirectory)
 
-	//creating files
-	seedFile, err := os.Create(p.Join(p.Dir(filename), "seed_map.txt"))
-	if err != nil {
-		println(err.Error())
-	}
-	defer seedFile.Close()
-	seedResult, err := json.Marshal(seedMap)
-	if err != nil {
-		println(err.Error())
-		return
-	}
-	seedFile.Write(seedResult)
+		//iterate and print map here if required
+		seedMap := make(map[string]int64)
+		for val := range m.Iter() {
+			seedMap[val.Key] = val.Value.(int64)
+		}
 
-	resultFile, err := os.Create(p.Join(p.Dir(filename), "comparison_results.txt"))
-	if err != nil {
-		println(err.Error())
+		//creating files
+		seedFile, err := os.Create(p.Join(p.Dir(filename), "seed_map.txt"))
+		if err != nil {
+			println(err.Error())
+		}
+		defer seedFile.Close()
+		seedResult, err := json.Marshal(seedMap)
+		if err != nil {
+			println(err.Error())
+			return
+		}
+		seedFile.Write(seedResult)
+
+		resultFile, err := os.Create(p.Join(p.Dir(filename), "comparison_results.txt"))
+		if err != nil {
+			println(err.Error())
+		}
+		defer resultFile.Close()
+		comparisonResult, err := json.Marshal(resultList)
+		if err != nil {
+			println(err.Error())
+			return
+		}
+		resultFile.Write(comparisonResult)
 	}
-	defer resultFile.Close()
-	comparisonResult, err := json.Marshal(resultList)
-	if err != nil {
-		println(err.Error())
-		return
-	}
-	resultFile.Write(comparisonResult)
 
 	return
 }
