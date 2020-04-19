@@ -17,7 +17,7 @@ type GeneralStreamReassemblyScenario struct {
 }
 
 func NewGeneralStreamReassemblyScenario() *GeneralStreamReassemblyScenario {
-	return &GeneralStreamReassemblyScenario{AbstractScenario{name: "echo_scenario", version: 2}}
+	return &GeneralStreamReassemblyScenario{AbstractScenario{name: "general_stream_reassembly", version: 2}}
 }
 func (s *GeneralStreamReassemblyScenario) Run(conn *Connection, trace *Trace, preferredPath string, debug bool) {
 	multiStream := true
