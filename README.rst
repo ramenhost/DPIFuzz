@@ -1,4 +1,4 @@
-A Fuzzing Framework for the QUIC Protocol
+A Structured Fuzzing Framework for the QUIC Protocol
 =====================
 
 .. image:: https://godoc.org/github.com/QUIC-Tracker/quic-tracker?status.svg
