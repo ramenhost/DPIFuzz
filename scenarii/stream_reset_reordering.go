@@ -25,7 +25,7 @@ func NewStreamResetReorderingScenario() *StreamResetReorderingScenario {
 	return &StreamResetReorderingScenario{AbstractScenario{name: "stream_reset_reordering", version: 2}}
 }
 func (s *StreamResetReorderingScenario) Run(conn *qt.Connection, trace *qt.Trace, preferredPath string, debug bool) {
-	if !strings.Contains(conn.ALPN, "hq") {
+	if !strings.Contains(conn.ALPN, "hq") && !strings.Contains(conn.ALPN, "h3") {
 		trace.ErrorCode = SOR_EndpointDoesNotSupportHQ
 		return
 	}

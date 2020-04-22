@@ -4,6 +4,7 @@ import (
 	// "bytes"
 	"fmt"
 	. "github.com/QUIC-Tracker/quic-tracker"
+	"sort"
 	"strings"
 	"time"
 )
@@ -30,7 +31,7 @@ func (s *StreamReassemblyScenario) Run(conn *Connection, trace *Trace, preferred
 	var usedStreams []uint64
 	streamDataRecord := make(map[uint64]uint64)
 
-	if !strings.Contains(conn.ALPN, "hq") {
+	if !strings.Contains(conn.ALPN, "hq") && !strings.Contains(conn.ALPN, "h3") {
 		trace.ErrorCode = SR_EndpointDoesNotSupportHQ
 		return
 	}
@@ -82,6 +83,7 @@ func (s *StreamReassemblyScenario) Run(conn *Connection, trace *Trace, preferred
 	}
 
 	var streamData string = ""
+	streamDataMap := make(map[uint64]string)
 
 forLoop:
 	for {
@@ -96,7 +98,8 @@ forLoop:
 				for _, f := range p.(Framer).GetAll(StreamType) {
 					s := f.(*StreamFrame)
 					stream := conn.Streams.Get(s.StreamId)
-					streamData += string(stream.ReadData)
+					streamDataMap[s.StreamId] += string(stream.ReadData)
+					// streamData += string(stream.ReadData)
 					// if res := bytes.Compare(stream.ReadData, payload1); res != 0 {
 					// 	trace.ErrorCode = EC_PayloadChanged
 					// 	fmt.Println("Not the same\n")
@@ -113,7 +116,15 @@ forLoop:
 			break forLoop
 		}
 	}
-	fmt.Println(streamData)
+	var keys []uint64
+	for k, _ := range streamDataMap {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	for _, k := range keys {
+		streamData += streamDataMap[k]
+	}
+	fmt.Println("Stream Data: ", streamData)
 	trace.Results["StreamDataReassembly"] = streamData
 	if !conn.Streams.Get(0).ReadClosed {
 		trace.ErrorCode = SR_HostDidNotRespond

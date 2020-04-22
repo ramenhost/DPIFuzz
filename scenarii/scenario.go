@@ -133,10 +133,10 @@ func GetAllScenarii() map[string]Scenario {
 		"multi_packet_client_hello":  NewMultiPacketClientHello(),
 		"stream_reassembly":          NewStreamReassemblyScenario(),
 		"general_stream_reassembly":  NewGeneralStreamReassemblyScenario(),
-		// "echo":                       NewEchoScenario(),
-		// "spurious_initial_packet":    NewSpuriousInitialPacketScenario(),
-		// "random_sequence":            NewRandomSequenceScenario(),
-		// "random_packet_sequence":     NewRandomPacketSequenceScenario(),
-		// "stream_reset_reordering": NewStreamResetReorderingScenario(),
+		"echo":                       NewEchoScenario(),
+		"spurious_initial_packet":    NewSpuriousInitialPacketScenario(),
+		"random_sequence":            NewRandomSequenceScenario(),
+		"random_packet_sequence":     NewRandomPacketSequenceScenario(),
+		"stream_reset_reordering":    NewStreamResetReorderingScenario(),
 	}
 }

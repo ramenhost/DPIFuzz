@@ -22,7 +22,7 @@ func NewStreamOpeningReorderingScenario() *StreamOpeningReorderingScenario {
 	return &StreamOpeningReorderingScenario{AbstractScenario{name: "stream_opening_reordering", version: 2}}
 }
 func (s *StreamOpeningReorderingScenario) Run(conn *qt.Connection, trace *qt.Trace, preferredPath string, debug bool) {
-	if !strings.Contains(conn.ALPN, "hq") {
+	if !strings.Contains(conn.ALPN, "hq") && !strings.Contains(conn.ALPN, "h3") {
 		trace.ErrorCode = SOR_EndpointDoesNotSupportHQ
 		return
 	}

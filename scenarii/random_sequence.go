@@ -26,7 +26,7 @@ func NewRandomSequenceScenario() *RandomSequenceScenario {
 	return &RandomSequenceScenario{AbstractScenario{name: "random_sequence", version: 2}}
 }
 func (s *RandomSequenceScenario) Run(conn *qt.Connection, trace *qt.Trace, preferredPath string, debug bool) {
-	if !strings.Contains(conn.ALPN, "hq") {
+	if !strings.Contains(conn.ALPN, "hq") && !strings.Contains(conn.ALPN, "h3") {
 		trace.ErrorCode = SOR_EndpointDoesNotSupportHQ
 		return
 	}

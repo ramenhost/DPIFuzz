@@ -141,6 +141,7 @@ func fuzz_individual_frame(frame *Frame) {
 		for i := 0; i < 3; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := reset_fields[i]; fuzz_field {
+				//we don't fuzz stream id as it is an easy check which can be used to drop packets
 				// case "StreamId":
 				// 	(*frame).(*ResetStream).StreamId = uint64(R.Uint32())
 				case "ApplicationErrorCode":
@@ -192,6 +193,7 @@ func fuzz_individual_frame(frame *Frame) {
 					(*frame).(*StreamFrame).LenBit = R.Float32() < 0.5
 				case "OffBit":
 					(*frame).(*StreamFrame).OffBit = R.Float32() < 0.5
+				//we don't fuzz stream id as it is an easy check which can be used to drop packets
 				// case "StreamId":
 				// 	(*frame).(*StreamFrame).StreamId = uint64(R.Uint32())
 				case "Offset":
@@ -262,6 +264,7 @@ func fuzz_individual_frame(frame *Frame) {
 		for i := 0; i < 2; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field := streamDataBlocked_fields[i]; fuzz_field {
+				//we don't fuzz stream id as it is an easy check which can be used to drop packets
 				// case "StreamId":
 				// 	(*frame).(*StreamDataBlockedFrame).StreamId = uint64(R.Uint32())
 				case "StreamDataLimit":
