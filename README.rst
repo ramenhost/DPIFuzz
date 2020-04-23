@@ -21,7 +21,7 @@ Run this command as well
 
 ::
 
-    go get -u github.com/QUIC-Tracker/quic-tracker  # This will fail because of the missing dependencies that should be build using the 4 lines below
+    go get -u github.com/piano-man/quic-tracker  # This will fail because of the missing dependencies that should be build using the 4 lines below
     cd $GOPATH/src/github.com/mpiraux/pigotls
     make
     cd $GOPATH/src/github.com/mpiraux/ls-qpack-go
@@ -39,7 +39,7 @@ about their usage see:
 
 Brief Explanation about the fuzzer architecture
 ------------------------------------------------
-The fuzzer code is executed using the differential_fuzzer.go script in ``bin/test_suite/``. 
+The fuzzer code is executed using the differential_fuzzer.go script in ``bin/test_suite/``. Remember to use the fuzz flag and set it to 1. 
 
 When run without specifying any value for the scenario flag, it will execute all the scenarios against all the hosts specifies in a .txt file which can be created in a format similar to the ietf_quic_hosts.txt file. In case more than one host is specified, the results of the execution will be the following two txt files
 
@@ -55,16 +55,3 @@ The fuzzing logic lies in the EncodeandEncrypt function in the connection.go fil
 2. fuzz_payload
 
 Both of these are located in the connection.go file and the code is self explanatory.
-
-Docker
-------
-
-Docker builds exist on `Docker Hub`_.
-
-::
-
-    docker run --network="host" quictracker/quictracker /http_get -h
-    docker run --network="host" quictracker/quictracker /scenario_runner -h
-    docker run --network="host" quictracker/quictracker /test_suite -h
-
-.. _Docker Hub: https://hub.docker.com/r/quictracker/quictracker/
