@@ -2,3 +2,8 @@
 __pycache__
 quic_tracker/postprocess/output
 *.qlog
+quic_tracker/bin/test_suite/hosts.txt
+quic_tracker/bin/test_suite/host2.txt
+quic_tracker/bin/test_suite/host3.txt
+quic_tracker/bin/test_suite/seed_map.txt
+quic_tracker/bin/test_suite/comparison_results.txt
