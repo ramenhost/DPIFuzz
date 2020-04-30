@@ -105,7 +105,7 @@ func (s *GeneralStreamReassemblyScenario) Run(conn *Connection, trace *Trace, pr
 	<-time.NewTimer(20 * time.Millisecond).C // Simulates the SendingAgent behaviour
 
 	for _, packet := range packetList {
-		conn.DoSendPacket(packet, EncryptionLevel1RTT)
+		conn.DoSendPacketFuzz(packet, EncryptionLevel1RTT)
 	}
 
 	var streamData string = ""

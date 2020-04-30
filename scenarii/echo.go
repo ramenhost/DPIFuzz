@@ -44,15 +44,15 @@ func (s *EchoScenario) Run(conn *Connection, trace *Trace, preferredPath string,
 	payload2 := []byte(fmt.Sprintf("Stream2 Test"))
 
 	pp1 := NewProtectedPacket(conn)
-	pp1.Frames = append(pp1.Frames, NewStreamFrame(0, 0, payload, false))
+	pp1.Frames = append(pp1.Frames, NewStreamFrame(32, 0, payload, false))
 	pp1.Frames = append(pp1.Frames, NewStreamFrame(4, 0, payload2, false))
 
 	pp2 := NewProtectedPacket(conn)
-	pp2.Frames = append(pp2.Frames, NewStreamFrame(0, uint64(len(payload)), []byte{}, true))
+	pp2.Frames = append(pp2.Frames, NewStreamFrame(32, uint64(len(payload)), []byte{}, true))
 	pp2.Frames = append(pp2.Frames, NewStreamFrame(4, uint64(len(payload2)), []byte{}, true))
 
-	conn.DoSendPacket(pp2, EncryptionLevel1RTT)
 	conn.DoSendPacket(pp1, EncryptionLevel1RTT)
+	conn.DoSendPacket(pp2, EncryptionLevel1RTT)
 
 	var streamData string = ""
 	streamDataMap := make(map[uint64]string)
@@ -97,7 +97,7 @@ forLoop:
 	}
 	fmt.Println("Stream Data: ", streamData)
 	trace.Results["StreamDataReassembly"] = streamData
-	if !conn.Streams.Get(0).ReadClosed {
-		trace.ErrorCode = EC_HostDidNotRespond
-	}
+	// if !conn.Streams.Get(0).ReadClosed {
+	// 	trace.ErrorCode = EC_HostDidNotRespond
+	// }
 }

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/QUIC-Tracker/quic-tracker/qlog"
-	"github.com/jmcvetta/randutil"
+	// "github.com/jmcvetta/randutil"
 	"github.com/mpiraux/pigotls"
 	"log"
 	r "math/rand"
@@ -98,6 +98,50 @@ func RandStringBytes(n int) []byte {
 	return b
 }
 
+var MinMaxError = errors.New("Min cannot be greater than max.")
+
+// IntRange returns a random integer in the range from min to max.
+func IntRange(min, max int) (int, error) {
+	var result int
+	switch {
+	case min > max:
+		// Fail with error
+		return result, MinMaxError
+	case max == min:
+		result = max
+	case max > min:
+		maxRand := max - min
+		b := R.Intn(maxRand)
+		result = min + int(b)
+	}
+	return result, nil
+}
+
+type Choice struct {
+	Weight int
+	Item   interface{}
+}
+
+func WeightedChoice(choices []Choice) (Choice, error) {
+	var ret Choice
+	sum := 0
+	for _, c := range choices {
+		sum += c.Weight
+	}
+	r, err := IntRange(0, sum)
+	if err != nil {
+		return ret, err
+	}
+	for _, c := range choices {
+		r -= c.Weight
+		if r < 0 {
+			return c, nil
+		}
+	}
+	err = errors.New("Internal error - code should not reach this point")
+	return ret, err
+}
+
 func (c *Connection) ConnectedIp() net.Addr {
 	return c.UdpConnection.RemoteAddr()
 }
@@ -116,11 +160,11 @@ func fuzz_individual_frame(frame *Frame) {
 		// fmt.Println("Can't fuzz ping frame")
 	case AckType:
 		fmt.Println("Fuzzing ACK Frame")
-		ack_fields := []randutil.Choice{{1, "LargestAcknowledged"}, {1, "AckDelay"}, {1, "AckRangeCount"}, {1, "AckRanges"}}
+		ack_fields := []Choice{{1, "LargestAcknowledged"}, {1, "AckDelay"}, {1, "AckRangeCount"}, {1, "AckRanges"}}
 		// num := R.Intn(4)
 		for i := 0; i < 4; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(ack_fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(ack_fields); fuzz_field.Item {
 				case "LargestAcknowledged":
 					(*frame).(*AckFrame).LargestAcknowledged = PacketNumber(uint64(R.Uint32()))
 				case "AckDelay":
@@ -138,10 +182,10 @@ func fuzz_individual_frame(frame *Frame) {
 	case AckECNType:
 	case ResetStreamType:
 		fmt.Println("Fuzzing Reset Stream")
-		reset_fields := []randutil.Choice{{1, "StreamId"}, {1, "ApplicationErrorCode"}, {1, "FinalSize"}}
+		reset_fields := []Choice{{1, "StreamId"}, {1, "ApplicationErrorCode"}, {1, "FinalSize"}}
 		for i := 0; i < 3; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(reset_fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(reset_fields); fuzz_field.Item {
 				//we don't fuzz stream id as it is an easy check which can be used to drop packets
 				// case "StreamId":
 				// 	(*frame).(*ResetStream).StreamId = uint64(R.Uint32())
@@ -154,10 +198,10 @@ func fuzz_individual_frame(frame *Frame) {
 		}
 	case StopSendingType:
 		fmt.Println("Fuzzing Stopsending frame")
-		stop_fields := []randutil.Choice{{1, "StreamId"}, {1, "ApplicationErrorCode"}}
+		stop_fields := []Choice{{1, "StreamId"}, {1, "ApplicationErrorCode"}}
 		for i := 0; i < 2; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(stop_fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(stop_fields); fuzz_field.Item {
 				case "StreamId":
 					(*frame).(*StopSendingFrame).StreamId = uint64(R.Uint32())
 				case "ApplicationErrorCode":
@@ -168,10 +212,10 @@ func fuzz_individual_frame(frame *Frame) {
 	case CryptoType:
 		//fuzzing the crypto frame might stop the handshake from getting completed. Should we fuzz it anyway ?
 		fmt.Println("Fuzzing Crypto frame")
-		crypto_fields := []randutil.Choice{{1, "Offset"}, {1, "Length"}, {1, "CryptoData"}}
+		crypto_fields := []Choice{{1, "Offset"}, {1, "Length"}, {1, "CryptoData"}}
 		for i := 0; i < 3; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(crypto_fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(crypto_fields); fuzz_field.Item {
 				case "Offset":
 					(*frame).(*CryptoFrame).Offset = uint64(R.Uint32())
 					//should we fuzz the next two fields ?
@@ -183,11 +227,11 @@ func fuzz_individual_frame(frame *Frame) {
 	case NewTokenType:
 	case StreamType:
 		fmt.Println("Fuzzing Stream Frame")
-		stream_fields := []randutil.Choice{{1, "FinBit"}, {1, "LenBit"}, {1, "OffBit"}, {1, "StreamId"}, {1, "Offset"}, {1, "Length"}, {1, "StreamData"}}
+		stream_fields := []Choice{{1, "FinBit"}, {1, "LenBit"}, {1, "OffBit"}, {1, "StreamId"}, {1, "Offset"}, {1, "Length"}, {1, "StreamData"}}
 		// num := R.Intn(7)
 		for i := 0; i < 7; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(stream_fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(stream_fields); fuzz_field.Item {
 				case "FinBit":
 					(*frame).(*StreamFrame).FinBit = R.Float32() < 0.5
 				case "LenBit":
@@ -213,10 +257,10 @@ func fuzz_individual_frame(frame *Frame) {
 		}
 	case MaxDataType:
 		fmt.Println("Fuzzing MaxData frame")
-		maxData_fields := []randutil.Choice{{1, "MaximumData"}}
+		maxData_fields := []Choice{{1, "MaximumData"}}
 		for i := 0; i < 1; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(maxData_fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(maxData_fields); fuzz_field.Item {
 				case "MaximumData":
 					(*frame).(*MaxDataFrame).MaximumData = uint64(R.Uint32())
 				}
@@ -224,10 +268,10 @@ func fuzz_individual_frame(frame *Frame) {
 		}
 	case MaxStreamDataType:
 		fmt.Println("Fuzzing MaxStreamData frame")
-		maxStreamData_fields := []randutil.Choice{{1, "StreamId"}, {1, "MaximumData"}}
+		maxStreamData_fields := []Choice{{1, "StreamId"}, {1, "MaximumData"}}
 		for i := 0; i < 2; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(maxStreamData_fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(maxStreamData_fields); fuzz_field.Item {
 				case "StreamId":
 					(*frame).(*MaxStreamDataFrame).StreamId = uint64(R.Uint32())
 				case "MaximumData":
@@ -237,10 +281,10 @@ func fuzz_individual_frame(frame *Frame) {
 		}
 	case MaxStreamsType:
 		fmt.Println("Fuzzing MaxStreams frame")
-		maxStream_fields := []randutil.Choice{{1, "StreamType"}, {1, "MaximumStreams"}}
+		maxStream_fields := []Choice{{1, "StreamType"}, {1, "MaximumStreams"}}
 		for i := 0; i < 2; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(maxStream_fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(maxStream_fields); fuzz_field.Item {
 				case "StreamType":
 					(*frame).(*MaxStreamsFrame).StreamsType = R.Float32() < 0.5
 				case "MaximumStreams":
@@ -250,10 +294,10 @@ func fuzz_individual_frame(frame *Frame) {
 		}
 	case DataBlockedType:
 		fmt.Println("Fuzzing DataBlocked frame")
-		dataBlocked_fields := []randutil.Choice{{1, "DataLimit"}}
+		dataBlocked_fields := []Choice{{1, "DataLimit"}}
 		for i := 0; i < 1; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(dataBlocked_fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(dataBlocked_fields); fuzz_field.Item {
 				case "DataLimit":
 					(*frame).(*DataBlockedFrame).DataLimit = uint64(R.Uint32())
 				}
@@ -261,10 +305,10 @@ func fuzz_individual_frame(frame *Frame) {
 		}
 	case StreamDataBlockedType:
 		fmt.Println("Fuzzing StreamDataBlocked frame")
-		streamDataBlocked_fields := []randutil.Choice{{1, "StreamId"}, {1, "StreamDataLimit"}}
+		streamDataBlocked_fields := []Choice{{1, "StreamId"}, {1, "StreamDataLimit"}}
 		for i := 0; i < 2; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(streamDataBlocked_fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(streamDataBlocked_fields); fuzz_field.Item {
 				//we don't fuzz stream id as it is an easy check which can be used to drop packets
 				// case "StreamId":
 				// 	(*frame).(*StreamDataBlockedFrame).StreamId = uint64(R.Uint32())
@@ -275,10 +319,10 @@ func fuzz_individual_frame(frame *Frame) {
 		}
 	case StreamsBlockedType:
 		fmt.Println("Fuzzing StreamsBlocked frame")
-		streamBlocked_fields := []randutil.Choice{{1, "StreamsType"}, {1, "StreamLimit"}}
+		streamBlocked_fields := []Choice{{1, "StreamsType"}, {1, "StreamLimit"}}
 		for i := 0; i < 2; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(streamBlocked_fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(streamBlocked_fields); fuzz_field.Item {
 				case "StreamsType":
 					(*frame).(*StreamsBlockedFrame).StreamsType = R.Float32() < 0.5
 				case "StreamLimit":
@@ -288,10 +332,10 @@ func fuzz_individual_frame(frame *Frame) {
 		}
 	case NewConnectionIdType:
 		fmt.Println("Fuzzing NewConnectionId frame")
-		nConId_fields := []randutil.Choice{{1, "Sequence"}, {1, "RetirePriorTo"}, {1, "Length"}, {1, "ConnectionId"}, {1, "StatelessResetToken"}}
+		nConId_fields := []Choice{{1, "Sequence"}, {1, "RetirePriorTo"}, {1, "Length"}, {1, "ConnectionId"}, {1, "StatelessResetToken"}}
 		for i := 0; i < 5; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(nConId_fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(nConId_fields); fuzz_field.Item {
 				case "Sequence":
 					(*frame).(*NewConnectionIdFrame).Sequence = uint64(R.Uint32())
 				case "RetirePriorTo":
@@ -310,10 +354,10 @@ func fuzz_individual_frame(frame *Frame) {
 		}
 	case RetireConnectionIdType:
 		fmt.Println("Fuzzing RetireConnectionId frame")
-		fields := []randutil.Choice{{1, "SequenceNumber"}}
+		fields := []Choice{{1, "SequenceNumber"}}
 		for i := 0; i < 1; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(fields); fuzz_field.Item {
 				case "SequenceNumber":
 					(*frame).(*RetireConnectionId).SequenceNumber = uint64(R.Uint32())
 				}
@@ -321,10 +365,10 @@ func fuzz_individual_frame(frame *Frame) {
 		}
 	case PathChallengeType:
 		fmt.Println("Fuzzing PathChallenge frame")
-		fields := []randutil.Choice{{1, "Data"}}
+		fields := []Choice{{1, "Data"}}
 		for i := 0; i < 1; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(fields); fuzz_field.Item {
 				case "Data":
 					for j := 0; j < 16; j++ {
 						token := make([]byte, 1)
@@ -336,10 +380,10 @@ func fuzz_individual_frame(frame *Frame) {
 		}
 	case PathResponseType:
 		fmt.Println("Fuzzing PathResponse frame")
-		fields := []randutil.Choice{{1, "Data"}}
+		fields := []Choice{{1, "Data"}}
 		for i := 0; i < 1; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(fields); fuzz_field.Item {
 				case "Data":
 					for j := 0; j < 16; j++ {
 						token := make([]byte, 1)
@@ -351,10 +395,10 @@ func fuzz_individual_frame(frame *Frame) {
 		}
 	case ConnectionCloseType:
 		fmt.Println("Fuzzing ConnectionClose frame")
-		fields := []randutil.Choice{{1, "ErrorCode"}, {1, "ErrorFrameType"}, {1, "ReasonPhraseLength"}, {1, "ReasonPhrase"}}
+		fields := []Choice{{1, "ErrorCode"}, {1, "ErrorFrameType"}, {1, "ReasonPhraseLength"}, {1, "ReasonPhrase"}}
 		for i := 0; i < 4; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(fields); fuzz_field.Item {
 				case "ErrorCode":
 					(*frame).(*ConnectionCloseFrame).ErrorCode = uint64(R.Uint32())
 				case "ErrorFrameType":
@@ -369,10 +413,10 @@ func fuzz_individual_frame(frame *Frame) {
 		}
 	case ApplicationCloseType:
 		fmt.Println("Fuzzing ApplicationClose frame")
-		fields := []randutil.Choice{{1, "errorCode"}, {1, "reasonPhraseLength"}, {1, "reasonPhrase"}}
+		fields := []Choice{{1, "errorCode"}, {1, "reasonPhraseLength"}, {1, "reasonPhrase"}}
 		for i := 0; i < 3; i++ {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
-				switch fuzz_field, _ := randutil.WeightedChoice(fields); fuzz_field.Item {
+				switch fuzz_field, _ := WeightedChoice(fields); fuzz_field.Item {
 				case "errorCode":
 					(*frame).(*ApplicationCloseFrame).ErrorCode = uint64(R.Uint32())
 				case "reasonPhraseLength":
@@ -431,16 +475,16 @@ func fuzz_frame(packet *Packet, level EncryptionLevel) {
 
 func (c *Connection) EncodeAndEncrypt(packet Packet, level EncryptionLevel) []byte {
 
-	fuzz_decision := R.Float32() < 0.5
-	options := []randutil.Choice{{1, "fuzz_payload"}, {2, "fuzz_frame"}}
-	val, err := randutil.WeightedChoice(options)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Println(val.Item)
-	if val.Item == "fuzz_frame" && fuzz_decision == true && FuzzSession == true && packet.PNSpace() == PNSpaceAppData {
-		fuzz_frame(&packet, level)
-	}
+	// fuzz_decision := R.Float32() < 0.5
+	// options := []Choice{{1, "fuzz_payload"}, {2, "fuzz_frame"}}
+	// val, err := WeightedChoice(options)
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// }
+	// fmt.Println(val.Item)
+	// if val.Item == "fuzz_frame" && fuzz_decision == true && FuzzSession == true && packet.PNSpace() == PNSpaceAppData {
+	// 	fuzz_frame(&packet, level)
+	// }
 	// fmt.Println(packet.PNSpace())
 	switch packet.PNSpace() {
 	case PNSpaceInitial, PNSpaceHandshake, PNSpaceAppData:
@@ -460,9 +504,9 @@ func (c *Connection) EncodeAndEncrypt(packet Packet, level EncryptionLevel) []by
 		// 	fmt.Println(fi.FrameType())
 		// }
 		// fmt.Println("done")
-		if val.Item == "fuzz_payload" && fuzz_decision == true && FuzzSession == true && packet.PNSpace() == PNSpaceAppData {
-			payload = fuzz_payload(payload)
-		}
+		// if val.Item == "fuzz_payload" && fuzz_decision == true && FuzzSession == true && packet.PNSpace() == PNSpaceAppData {
+		// 	payload = fuzz_payload(payload)
+		// }
 		// fmt.Println(len(payload))
 		if h, ok := packet.Header().(*LongHeader); ok {
 			h.Length = NewVarInt(uint64(h.TruncatedPN().Length + len(payload) + cryptoState.Write.Overhead()))
@@ -491,6 +535,53 @@ func (c *Connection) EncodeAndEncrypt(packet Packet, level EncryptionLevel) []by
 	return nil
 }
 
+func (c *Connection) EncodeAndEncryptFuzz(packet Packet, level EncryptionLevel) []byte {
+
+	fuzz_decision := R.Float32() < 0.5
+	fmt.Println(fuzz_decision)
+	options := []Choice{{1, "fuzz_payload"}, {2, "fuzz_frame"}}
+	val, err := WeightedChoice(options)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	fmt.Println(val.Item)
+	if val.Item == "fuzz_frame" && fuzz_decision == true && FuzzSession == true && packet.PNSpace() == PNSpaceAppData {
+		fuzz_frame(&packet, level)
+	}
+	switch packet.PNSpace() {
+	case PNSpaceInitial, PNSpaceHandshake, PNSpaceAppData:
+		cryptoState := c.CryptoStates[level]
+
+		payload := packet.EncodePayload()
+		if val.Item == "fuzz_payload" && fuzz_decision == true && FuzzSession == true && packet.PNSpace() == PNSpaceAppData {
+			payload = fuzz_payload(payload)
+		}
+		if h, ok := packet.Header().(*LongHeader); ok {
+			h.Length = NewVarInt(uint64(h.TruncatedPN().Length + len(payload) + cryptoState.Write.Overhead()))
+		}
+
+		header := packet.EncodeHeader()
+		protectedPayload := cryptoState.Write.Encrypt(payload, uint64(packet.Header().PacketNumber()), header)
+		packetBytes := append(header, protectedPayload...)
+
+		firstByteMask := byte(0x1F)
+		if packet.Header().PacketType() != ShortHeaderPacket {
+			firstByteMask = 0x0F
+		}
+		sample, pnOffset := GetPacketSample(packet.Header(), packetBytes)
+		mask := cryptoState.HeaderWrite.Encrypt(sample, make([]byte, 5, 5))
+		packetBytes[0] ^= mask[0] & firstByteMask
+
+		for i := 0; i < packet.Header().TruncatedPN().Length; i++ {
+			packetBytes[pnOffset+i] ^= mask[1+i]
+		}
+
+		return packetBytes
+	default:
+	}
+	return nil
+}
+
 func (c *Connection) PacketWasSent(packet Packet) {
 	if c.SentPacketHandler != nil {
 		c.SentPacketHandler(packet.Encode(packet.EncodePayload()), packet.Pointer())
@@ -503,6 +594,21 @@ func (c *Connection) DoSendPacket(packet Packet, level EncryptionLevel) {
 		c.Logger.Printf("Sending packet {type=%s, number=%d}\n", packet.Header().PacketType().String(), packet.Header().PacketNumber())
 
 		packetBytes := c.EncodeAndEncrypt(packet, level)
+		c.UdpConnection.Write(packetBytes)
+		packet.SetSendContext(PacketContext{Timestamp: time.Now(), RemoteAddr: c.UdpConnection.RemoteAddr(), DatagramSize: uint16(len(packetBytes)), PacketSize: uint16(len(packetBytes))})
+
+		c.PacketWasSent(packet)
+	default:
+		// Clients do not send cleartext packets
+	}
+}
+
+func (c *Connection) DoSendPacketFuzz(packet Packet, level EncryptionLevel) {
+	switch packet.PNSpace() {
+	case PNSpaceInitial, PNSpaceHandshake, PNSpaceAppData:
+		c.Logger.Printf("Sending packet {type=%s, number=%d}\n", packet.Header().PacketType().String(), packet.Header().PacketNumber())
+
+		packetBytes := c.EncodeAndEncryptFuzz(packet, level)
 		c.UdpConnection.Write(packetBytes)
 		packet.SetSendContext(PacketContext{Timestamp: time.Now(), RemoteAddr: c.UdpConnection.RemoteAddr(), DatagramSize: uint16(len(packetBytes)), PacketSize: uint16(len(packetBytes))})
 

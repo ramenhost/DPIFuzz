@@ -6,7 +6,7 @@ import (
 	. "github.com/QUIC-Tracker/quic-tracker"
 	"sort"
 	"strings"
-	"time"
+	// "time"
 )
 
 //Scenario designed to specifically test server stream reassembly functionality. This scenario does not randomly insert stream data blocked and reset frames.
@@ -51,7 +51,25 @@ func (s *StreamReassemblyScenario) Run(conn *Connection, trace *Trace, preferred
 	}
 
 	numPackets := R.Intn(100)
+	fmt.Println("Number of Stream:", numStreams)
+	fmt.Println("Number of packets:", numPackets)
 	var packetList []*ProtectedPacket
+
+	//insertion packet example
+	// payload_start := []byte(fmt.Sprintf("CIS"))
+	// payload_end := []byte(fmt.Sprintf("PA"))
+	// pp1 := NewProtectedPacket(conn)
+	// pp1.Frames = append(pp1.Frames, NewStreamFrame(0, 0, payload_start, false))
+	// pp2 := NewProtectedPacket(conn)
+	// pp2.Frames = append(pp2.Frames, NewStreamFrame(44, 0, payload_end, false))
+	// pp3 := NewProtectedPacket(conn)
+	// pp3.Frames = append(pp2.Frames, NewStreamFrame(0, uint64(len(payload_start)), []byte{}, true))
+	// pp4 := NewProtectedPacket(conn)
+	// pp4.Frames = append(pp4.Frames, NewStreamFrame(44, uint64(len(payload_end)), []byte{}, true))
+	// conn.DoSendPacket(pp4, EncryptionLevel1RTT)
+	// conn.DoSendPacket(pp2, EncryptionLevel1RTT)
+	// conn.DoSendPacket(pp3, EncryptionLevel1RTT)
+	// conn.DoSendPacket(pp1, EncryptionLevel1RTT)
 
 	for i := 0; i < numPackets; i++ {
 		packet := NewProtectedPacket(conn)
@@ -60,10 +78,23 @@ func (s *StreamReassemblyScenario) Run(conn *Connection, trace *Trace, preferred
 		usedStreams = append(usedStreams, streamId)
 		payloadLength := R.Intn(50)
 		payload := RandStringBytes(payloadLength)
+		//evasion packet example
+		// if i == 6 {
+		// 	payload = []byte("BigRisk")
+		// }
+		// if i == 7 {
+		// 	payload = []byte("Payload")
+		// }
+		//payloadLength = len(payload)
+		// fmt.Println("Packet Number:", i)
+		// fmt.Println("Payload:", string(payload))
+		// fmt.Println("Stream Id: ", streamId)
+		// fmt.Println("-------------------------")
 		streamDataRecord[streamId] += uint64(payloadLength)
 		packetList[i].Frames = append(packetList[i].Frames, NewStreamFrame(streamId, streamDataRecord[streamId]-uint64(payloadLength), payload, false))
 	}
 
+	//TODO: Correct this. Iterate over map and not usedStreams. This will lead to repeated packets being created.
 	for i, id := range usedStreams {
 		packet := NewProtectedPacket(conn)
 		packetList = append(packetList, packet)
@@ -76,10 +107,10 @@ func (s *StreamReassemblyScenario) Run(conn *Connection, trace *Trace, preferred
 
 	incomingPackets := conn.IncomingPackets.RegisterNewChan(1000)
 
-	<-time.NewTimer(20 * time.Millisecond).C // Simulates the SendingAgent behaviour
+	// <-time.NewTimer(20 * time.Millisecond).C // Simulates the SendingAgent behaviour
 
 	for _, packet := range packetList {
-		conn.DoSendPacket(packet, EncryptionLevel1RTT)
+		conn.DoSendPacketFuzz(packet, EncryptionLevel1RTT)
 	}
 
 	var streamData string = ""

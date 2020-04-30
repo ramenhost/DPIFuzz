@@ -305,7 +305,7 @@ func main() {
 
 					//pick any part of trace that you want to compare between different hosts and write it to the file
 					out_3, _ := json.Marshal(trace.Results["StreamDataReassembly"])
-					fmt.Println(string(out_3))
+					fmt.Println("Data: ", string(out_3), " Seed:", source)
 					// 	out_1, _ := json.Marshal(trace.ErrorCode)
 					// 	out_2, _ := json.Marshal(trace.DiffCodes)
 					// 	if len(out_1) != 0 {
@@ -326,7 +326,7 @@ func main() {
 	if hostCount > 1 {
 
 		resultList := getFuzzerResults(scenarioName, scenarioIds, hostsFilename, *iterations, scenariiInstances, maxInstances, traceDirectory)
-
+		sort.Strings(resultList)
 		//iterate and print map here if required
 		seedMap := make(map[string]int64)
 		for val := range m.Iter() {
