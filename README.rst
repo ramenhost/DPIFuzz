@@ -24,11 +24,14 @@ Run this command as well
     
 After this, run the following commands:
 
-``cd $GOPATH/src/github.com/QUIC-Tracker
-  rm -rf quic-tracker
-  git clone https://github.com/piano-man/quic-tracker.git``
+::
 
-The fuzzer and the test-suite is run using the scripts in ``bin/test_suite/``. For help
+    cd $GOPATH/src/github.com/QUIC-Tracker
+    rm -rf quic-tracker
+    git clone https://github.com/piano-man/quic-tracker.git
+
+
+The fuzzer is run using the scripts in ``bin/test_suite/``. For help
 about their usage see:
 
 ::
