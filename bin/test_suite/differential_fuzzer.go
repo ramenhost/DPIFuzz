@@ -232,7 +232,7 @@ func main() {
 				host, path := line[0], line[1]
 				h3port, err := strconv.Atoi(line[2])
 				if err != nil {
-					println(err)
+					// println(err)
 					continue
 				}
 				preferredALPN := line[3]
@@ -255,7 +255,7 @@ func main() {
 
 					outputFile, err := ioutil.TempFile("", "quic_tracker")
 					if err != nil {
-						println(err.Error())
+						// println(err.Error())
 						return
 					}
 					outputFile.Close()
@@ -274,28 +274,28 @@ func main() {
 					c.Stderr = &stderr
 					err = c.Run()
 					if err != nil {
-						fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
-						println(err.Error())
+						// fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
+						// println(err.Error())
 					}
 
 					var trace qt.Trace
 					outputFile, err = os.Open(outputFile.Name())
 					if err != nil {
-						println(err)
+						// println(err)
 					}
 					defer outputFile.Close()
 					defer os.Remove(outputFile.Name())
 
 					traceFile, err := os.Create(p.Join(*traceDirectory, sname, host+"_"+strconv.Itoa(iter)))
 					if err != nil {
-						println(err.Error())
+						// println(err.Error())
 						return
 					}
 					defer traceFile.Close()
 
 					err = json.NewDecoder(outputFile).Decode(&trace)
 					if err != nil {
-						println(err.Error())
+						// println(err.Error())
 						crashTrace.StartedAt = start.Unix()
 						crashTrace.Duration = uint64(time.Now().Sub(start).Seconds() * 1000)
 						out, _ := json.Marshal(crashTrace)

@@ -86,10 +86,10 @@ func (s *StreamReassemblyScenario) Run(conn *Connection, trace *Trace, preferred
 		// 	payload = []byte("Payload")
 		// }
 		//payloadLength = len(payload)
-		// fmt.Println("Packet Number:", i)
-		// fmt.Println("Payload:", string(payload))
-		// fmt.Println("Stream Id: ", streamId)
-		// fmt.Println("-------------------------")
+		fmt.Println("Packet Number:", i)
+		fmt.Println("Payload:", string(payload))
+		fmt.Println("Stream Id: ", streamId)
+		fmt.Println("-------------------------")
 		streamDataRecord[streamId] += uint64(payloadLength)
 		packetList[i].Frames = append(packetList[i].Frames, NewStreamFrame(streamId, streamDataRecord[streamId]-uint64(payloadLength), payload, false))
 	}
@@ -98,16 +98,27 @@ func (s *StreamReassemblyScenario) Run(conn *Connection, trace *Trace, preferred
 	for i, id := range usedStreams {
 		packet := NewProtectedPacket(conn)
 		packetList = append(packetList, packet)
-		packetList[i+numPackets].Frames = append(packetList[i+numPackets].Frames, NewStreamFrame(id, streamDataRecord[id], []byte{}, true))
+		packetList[i+numPackets].Frames = append(packetList[i+numPackets].Frames, NewStreamFrame(id, streamDataRecord[id], RandStringBytes(R.Intn(10)), true))
+		// packetList[i+numPackets].Frames = append(packetList[i+numPackets].Frames, NewStreamFrame(id, streamDataRecord[id], []byte{}, true))
 	}
 
-	R.Shuffle(len(packetList), func(i, j int) { packetList[i], packetList[j] = packetList[i], packetList[i] })
-
+	// R.Shuffle(len(packetList), func(i, j int) { packetList[i], packetList[j] = packetList[i], packetList[i] })
+	R.Shuffle(len(packetList), func(i, j int) { packetList[i], packetList[j] = packetList[j], packetList[i] })
+	// packet := NewProtectedPacket(conn)
+	// packetList[1] = packet
+	// packetList[1].Frames = append(packetList[1].Frames, NewStreamFrame(8, 18, []byte{}, true))
 	defer connAgents.CloseConnection(false, 0, "")
 
 	incomingPackets := conn.IncomingPackets.RegisterNewChan(1000)
 
 	// <-time.NewTimer(20 * time.Millisecond).C // Simulates the SendingAgent behaviour
+
+	for _, packet := range packetList {
+		for _, f := range packet.Frames {
+			s := f.(*StreamFrame)
+			fmt.Println("Testing:", s.StreamId, " FinBit:", s.FinBit, "Payload: ", string(s.StreamData), "Offset: ", s.Offset)
+		}
+	}
 
 	for _, packet := range packetList {
 		conn.DoSendPacketFuzz(packet, EncryptionLevel1RTT)

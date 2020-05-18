@@ -63,6 +63,10 @@ func (s *GeneralStreamReassemblyScenario) Run(conn *Connection, trace *Trace, pr
 		usedStreams = append(usedStreams, streamId)
 		payloadLength := R.Intn(50)
 		payload := RandStringBytes(payloadLength)
+		fmt.Println("Packet Number:", i)
+		fmt.Println("Payload:", string(payload))
+		fmt.Println("Stream Id: ", streamId)
+		fmt.Println("-------------------------")
 		streamDataRecord[streamId] += uint64(payloadLength)
 		packetList[i].Frames = append(packetList[i].Frames, NewStreamFrame(streamId, streamDataRecord[streamId]-uint64(payloadLength), payload, false))
 	}
@@ -97,6 +101,7 @@ func (s *GeneralStreamReassemblyScenario) Run(conn *Connection, trace *Trace, pr
 	}
 
 	R.Shuffle(len(packetList), func(i, j int) { packetList[i], packetList[j] = packetList[i], packetList[i] })
+	// R.Shuffle(len(packetList), func(i, j int) { packetList[i], packetList[j] = packetList[j], packetList[i] })
 
 	defer connAgents.CloseConnection(false, 0, "")
 
