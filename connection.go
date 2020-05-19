@@ -251,14 +251,11 @@ func fuzz_individual_frame(frame *Frame) {
 				// case "StreamId":
 				// 	(*frame).(*StreamFrame).StreamId = uint64(R.Uint32())
 				case "Offset":
-					fmt.Println("Fuzzing offset")
 					(*frame).(*StreamFrame).Offset = uint64(R.Uint32())
 				case "Length":
-					fmt.Println("Fuzzing length")
 					//does it make sense to fuzz both the length field and the stream data field ? It will definitely lead to a conflict
 					(*frame).(*StreamFrame).Length = uint64(R.Uint32())
 				case "StreamData":
-					fmt.Println("Fuzzing data")
 					token := make([]byte, len((*frame).(*StreamFrame).StreamData))
 					R.Read(token)
 					(*frame).(*StreamFrame).StreamData = token
