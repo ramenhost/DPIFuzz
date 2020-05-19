@@ -461,7 +461,6 @@ func fuzz_payload(payload []byte) []byte {
 	case "add_random_payload":
 		fmt.Println("adding random payload")
 		rand_payload := RandStringBytes(R.Intn(200))
-		fmt.Println(rand_payload)
 		payload = append(payload, rand_payload...)
 	}
 	return payload
