@@ -102,5 +102,6 @@ func GetAllScenarii() map[string]Scenario {
 	return map[string]Scenario{
 		"stream_reassembly":         NewStreamReassemblyScenario(),
 		"general_stream_reassembly": NewGeneralStreamReassemblyScenario(),
+		"overlapping_offset":        NewOverlappingOffsetScenario(),
 	}
 }
