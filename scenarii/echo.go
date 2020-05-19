@@ -47,7 +47,7 @@ func (s *EchoScenario) Run(conn *Connection, trace *Trace, preferredPath string,
 
 	pp1 := NewProtectedPacket(conn)
 	// pp1.Frames = append(pp1.Frames, NewStreamFrame(32, 0, payload, false))
-	pp1.Frames = append(pp1.Frames, NewStreamFrame(4, 0, payload, false))
+	pp1.Frames = append(pp1.Frames, NewStreamFrame(16, 0, payload, false))
 
 	// pp3 := NewProtectedPacket(conn)
 	// pp3.Frames = append(pp3.Frames, NewStreamFrame(4, uint64(len(payload2)), payload4, false))
@@ -67,16 +67,16 @@ func (s *EchoScenario) Run(conn *Connection, trace *Trace, preferredPath string,
 	pp5 := NewProtectedPacket(conn)
 	// pp2.Frames = append(pp2.Frames, NewStreamFrame(32, uint64(len(payload)), []byte{}, true))
 	// pp5.Frames = append(pp5.Frames, NewStreamFrame(4, uint64(len(payload2))+uint64(len(payload4)), []byte{}, true))
-	pp5.Frames = append(pp5.Frames, NewStreamFrame(4, uint64(len(payload)), []byte{}, true))
+	pp5.Frames = append(pp5.Frames, NewStreamFrame(16, uint64(len(payload)), payload2, true))
 
 	// conn.DoSendPacket(pp3, EncryptionLevel1RTT)
 	// conn.DoSendPacket(pp3, EncryptionLevel1RTT)
 	// conn.DoSendPacket(pp2, EncryptionLevel1RTT)
 	// conn.DoSendPacket(pp4, EncryptionLevel1RTT)
 	// conn.DoSendPacket(pp5, EncryptionLevel1RTT)
-	conn.DoSendPacket(pp5, EncryptionLevel1RTT)
-	// conn.DoSendPacket(pp4, EncryptionLevel1RTT)
 	conn.DoSendPacket(pp1, EncryptionLevel1RTT)
+	// conn.DoSendPacket(pp4, EncryptionLevel1RTT)
+	conn.DoSendPacket(pp5, EncryptionLevel1RTT)
 
 	var streamData string = ""
 	streamDataMap := make(map[uint64]string)
