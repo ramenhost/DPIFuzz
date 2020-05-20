@@ -2,7 +2,7 @@
 // This package contains all the test scenarii that are part of the test suite. Each of them is executed in a separate
 // connection. For executing scenarii, use the scripts in the bin/test_suite package.
 //
-// When adding a new scenario, one should comply with the following requirements:
+// When adding a new Fuzzer, one should comply with the following requirements:
 //
 // 	Its Name() must match its source code file without the extension.
 // 	It must be registered in the GetAllScenarii() function.
@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-type Scenario interface {
+type Fuzzer interface {
 	Name() string
 	Version() int
 	IPv6() bool
@@ -29,8 +29,8 @@ type Scenario interface {
 	Finished()
 }
 
-// Each scenario should embed this structure
-type AbstractScenario struct {
+// Each Fuzzer should embed this structure
+type AbstractFuzzer struct {
 	name     string
 	version  int
 	ipv6     bool
@@ -39,29 +39,29 @@ type AbstractScenario struct {
 	timeout  *time.Timer
 }
 
-func (s *AbstractScenario) Name() string {
+func (s *AbstractFuzzer) Name() string {
 	return s.name
 }
-func (s *AbstractScenario) Version() int {
+func (s *AbstractFuzzer) Version() int {
 	return s.version
 }
-func (s *AbstractScenario) IPv6() bool {
+func (s *AbstractFuzzer) IPv6() bool {
 	return s.ipv6
 }
-func (s *AbstractScenario) HTTP3() bool {
+func (s *AbstractFuzzer) HTTP3() bool {
 	return s.http3
 }
-func (s *AbstractScenario) SetTimer(d time.Duration) {
+func (s *AbstractFuzzer) SetTimer(d time.Duration) {
 	s.timeout = time.NewTimer(d)
 	if d == 0 {
 		<-s.timeout.C
 	}
 	s.duration = d
 }
-func (s *AbstractScenario) Timeout() <-chan time.Time {
+func (s *AbstractFuzzer) Timeout() <-chan time.Time {
 	return s.timeout.C
 }
-func (s *AbstractScenario) Finished() {
+func (s *AbstractFuzzer) Finished() {
 	if s.duration == 0 {
 		s.timeout.Reset(0)
 	}
@@ -69,7 +69,7 @@ func (s *AbstractScenario) Finished() {
 
 // Useful helper for scenarii that requires the handshake to complete before executing their test and don't want to
 // discern the cause of its failure.
-func (s *AbstractScenario) CompleteHandshake(conn *qt.Connection, trace *qt.Trace, handshakeErrorCode uint8, additionalAgents ...agents.Agent) *agents.ConnectionAgents {
+func (s *AbstractFuzzer) CompleteHandshake(conn *qt.Connection, trace *qt.Trace, handshakeErrorCode uint8, additionalAgents ...agents.Agent) *agents.ConnectionAgents {
 	connAgents := agents.AttachAgentsToConnection(conn, append(agents.GetDefaultAgents(), additionalAgents...)...)
 	handshakeAgent := &agents.HandshakeAgent{TLSAgent: connAgents.Get("TLSAgent").(*agents.TLSAgent), SocketAgent: connAgents.Get("SocketAgent").(*agents.SocketAgent)}
 	connAgents.Add(handshakeAgent)
@@ -96,13 +96,4 @@ func (s *AbstractScenario) CompleteHandshake(conn *qt.Connection, trace *qt.Trac
 		return nil
 	}
 	return connAgents
-}
-
-func GetAllScenarii() map[string]Scenario {
-	return map[string]Scenario{
-		"stream_reassembly":         NewStreamReassemblyScenario(),
-		"general_stream_reassembly": NewGeneralStreamReassemblyScenario(),
-		"overlapping_offset":        NewOverlappingOffsetScenario(),
-		// "fuzzer":                    NewFuzzer(),
-	}
 }
