@@ -40,43 +40,49 @@ func (s *EchoScenario) Run(conn *Connection, trace *Trace, preferredPath string,
 
 	<-time.NewTimer(20 * time.Millisecond).C // Simulates the SendingAgent behaviour
 
-	payload := []byte(fmt.Sprintf("EchoTest"))
-	payload2 := []byte(fmt.Sprintf("Stream2 Test"))
-	// payload3 := []byte(fmt.Sprintf("Important"))
-	payload4 := []byte(fmt.Sprintf("Tests"))
+	//Successful Difference between quiche and mvfst
+	// payload := []byte(fmt.Sprintf("Echo"))
+	// payload2 := []byte(fmt.Sprintf("Testing"))
+	// payload1 := []byte(fmt.Sprintf("Hello"))
+	// payload3 := []byte(fmt.Sprintf("YY"))
 
-	pp1 := NewProtectedPacket(conn)
-	// pp1.Frames = append(pp1.Frames, NewStreamFrame(32, 0, payload, false))
-	pp1.Frames = append(pp1.Frames, NewStreamFrame(16, 0, payload, false))
+	// pp1 := NewProtectedPacket(conn)
+	// pp1.Frames = append(pp1.Frames, NewStreamFrame(4, uint64(len(payload))+uint64(len(payload2)), []byte{}, true))
+
+	// pp2 := NewProtectedPacket(conn)
+	// pp2.Frames = append(pp2.Frames, NewStreamFrame(4, 0, payload, false))
 
 	// pp3 := NewProtectedPacket(conn)
-	// pp3.Frames = append(pp3.Frames, NewStreamFrame(4, uint64(len(payload2)), payload4, false))
+	// pp3.Frames = append(pp3.Frames, NewStreamFrame(4, 2, payload1, false))
 
-	pp2 := NewProtectedPacket(conn)
-	pp2.Frames = append(pp2.Frames, NewStreamFrame(4, uint64(len(payload2)), payload4, false))
+	// pp4 := NewProtectedPacket(conn)
+	// pp4.Frames = append(pp4.Frames, NewStreamFrame(4, 2, payload2, false))
 
 	// pp5 := NewProtectedPacket(conn)
-	// pp5.Frames = append(pp3.Frames, NewStreamFrame(32, uint64(len(payload)), []byte{}, true))
+	// pp5.Frames = append(pp5.Frames, NewStreamFrame(4, uint64(len(payload2))+2, payload3, true))
 
-	pp3 := NewProtectedPacket(conn)
-	pp3.Frames = append(pp3.Frames, NewStreamFrame(4, uint64(len(payload2)), payload, false))
-
-	pp4 := NewProtectedPacket(conn)
-	pp4.Frames = append(pp4.Frames, NewStreamFrame(4, uint64(len(payload2))+uint64(len(payload)), []byte("z"), false))
-
-	pp5 := NewProtectedPacket(conn)
-	// pp2.Frames = append(pp2.Frames, NewStreamFrame(32, uint64(len(payload)), []byte{}, true))
-	// pp5.Frames = append(pp5.Frames, NewStreamFrame(4, uint64(len(payload2))+uint64(len(payload4)), []byte{}, true))
-	pp5.Frames = append(pp5.Frames, NewStreamFrame(16, uint64(len(payload)), payload2, true))
-
+	// conn.DoSendPacket(pp1, EncryptionLevel1RTT)
 	// conn.DoSendPacket(pp3, EncryptionLevel1RTT)
-	// conn.DoSendPacket(pp3, EncryptionLevel1RTT)
-	// conn.DoSendPacket(pp2, EncryptionLevel1RTT)
 	// conn.DoSendPacket(pp4, EncryptionLevel1RTT)
 	// conn.DoSendPacket(pp5, EncryptionLevel1RTT)
+	// conn.DoSendPacket(pp2, EncryptionLevel1RTT)
+
+	//Successful Difference between quiche and mvfst
+	payload := []byte(fmt.Sprintf("BLIN"))
+	payload2 := []byte(fmt.Sprintf("OCKED"))
+
+	pp1 := NewProtectedPacket(conn)
+	pp1.Frames = append(pp1.Frames, NewStreamFrame(4, 7, []byte{}, true))
+
+	pp2 := NewProtectedPacket(conn)
+	pp2.Frames = append(pp2.Frames, NewStreamFrame(4, 2, payload2, false))
+
+	pp3 := NewProtectedPacket(conn)
+	pp3.Frames = append(pp3.Frames, NewStreamFrame(4, 0, payload, false))
+
 	conn.DoSendPacket(pp1, EncryptionLevel1RTT)
-	// conn.DoSendPacket(pp4, EncryptionLevel1RTT)
-	conn.DoSendPacket(pp5, EncryptionLevel1RTT)
+	conn.DoSendPacket(pp2, EncryptionLevel1RTT)
+	conn.DoSendPacket(pp3, EncryptionLevel1RTT)
 
 	var streamData string = ""
 	streamDataMap := make(map[uint64]string)

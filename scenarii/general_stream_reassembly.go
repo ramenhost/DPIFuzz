@@ -109,7 +109,10 @@ func (s *GeneralStreamReassemblyScenario) Run(conn *Connection, trace *Trace, pr
 
 	<-time.NewTimer(20 * time.Millisecond).C // Simulates the SendingAgent behaviour
 
-	for _, packet := range packetList {
+	for i, packet := range packetList {
+		if i == 1 {
+			break
+		}
 		conn.DoSendPacketFuzz(packet, EncryptionLevel1RTT)
 	}
 

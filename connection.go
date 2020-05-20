@@ -255,7 +255,7 @@ func fuzz_individual_frame(frame *Frame) {
 					fmt.Println("Fuzzing data")
 					token := make([]byte, len((*frame).(*StreamFrame).StreamData))
 					R.Read(token)
-					(*frame).(*StreamFrame).StreamData = token
+					// (*frame).(*StreamFrame).StreamData = token
 
 				}
 			}
@@ -610,10 +610,10 @@ func (c *Connection) DoSendPacket(packet Packet, level EncryptionLevel) {
 }
 
 func (c *Connection) DoSendPacketFuzz(packet Packet, level EncryptionLevel) {
-	// for _, f := range packet.(*ProtectedPacket).Frames {
-	// 	s := f.(*StreamFrame)
-	// 	fmt.Println("New Testing:", s.StreamId, " FinBit:", s.FinBit, " Payload:", string(s.StreamData), " Offset:", s.Offset)
-	// }
+	for _, f := range packet.(*ProtectedPacket).Frames {
+		s := f.(*StreamFrame)
+		fmt.Println("New Testing:", s.StreamId, " FinBit:", s.FinBit, " Payload:", string(s.StreamData), " Offset:", s.Offset)
+	}
 	switch packet.PNSpace() {
 	case PNSpaceInitial, PNSpaceHandshake, PNSpaceAppData:
 		c.Logger.Printf("Sending packet {type=%s, number=%d}\n", packet.Header().PacketType().String(), packet.Header().PacketNumber())

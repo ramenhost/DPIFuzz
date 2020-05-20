@@ -33,13 +33,13 @@ func (s *OverlappingOffsetScenario) Run(conn *Connection, trace *Trace, preferre
 	}
 
 	//add check to ensure that this number does not exceed that specified by transport parameters
-	numStreams := R.Intn(40)
+	numStreams := R.Intn(10)
 
 	for i := 0; i <= numStreams; i += 4 {
 		validStreams = append(validStreams, uint64(i))
 	}
 
-	numFragments := R.Intn(10-1) + 1
+	numFragments := R.Intn(3-1) + 1
 	fmt.Println("Number of Stream:", numStreams)
 	fmt.Println("Number of fragments:", numFragments)
 	var packetList []*ProtectedPacket
@@ -47,11 +47,11 @@ func (s *OverlappingOffsetScenario) Run(conn *Connection, trace *Trace, preferre
 	count := 0
 
 	for _, id := range validStreams {
-		dataLength := R.Intn(100-20) + 20
+		dataLength := R.Intn(30-10) + 10
 		for i := 0; i < numFragments; i++ {
 			temp := 0
 			for temp < dataLength {
-				payloadLength := R.Intn(10)
+				payloadLength := R.Intn(5-1) + 1
 				payload := RandStringBytes(payloadLength)
 				streamPacket := NewProtectedPacket(conn)
 				packetList = append(packetList, streamPacket)
