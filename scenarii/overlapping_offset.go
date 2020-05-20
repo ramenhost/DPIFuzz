@@ -33,7 +33,7 @@ func (s *OverlappingOffsetScenario) Run(conn *Connection, trace *Trace, preferre
 	}
 
 	//add check to ensure that this number does not exceed that specified by transport parameters
-	numStreams := R.Intn(10)
+	numStreams := R.Intn(1)
 
 	for i := 0; i <= numStreams; i += 4 {
 		validStreams = append(validStreams, uint64(i))
@@ -47,7 +47,7 @@ func (s *OverlappingOffsetScenario) Run(conn *Connection, trace *Trace, preferre
 	count := 0
 
 	for _, id := range validStreams {
-		dataLength := R.Intn(30-10) + 10
+		dataLength := R.Intn(20-10) + 10
 		for i := 0; i < numFragments; i++ {
 			temp := 0
 			for temp < dataLength {
