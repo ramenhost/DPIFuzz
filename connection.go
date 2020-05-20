@@ -601,6 +601,57 @@ func (c *Connection) DoSendPacketFuzz(packet Packet, level EncryptionLevel) {
 		// Clients do not send cleartext packets
 	}
 }
+
+//Experimental function: Designed for modular fuzzer
+func (c *Connection) EncodeAndEncryptFuzzedPacket(packet Packet, payload []byte, level EncryptionLevel) []byte {
+	switch packet.PNSpace() {
+	case PNSpaceInitial, PNSpaceHandshake, PNSpaceAppData:
+		cryptoState := c.CryptoState(level)
+
+		// payload := packet.EncodePayload()
+		if h, ok := packet.Header().(*LongHeader); ok {
+			h.Length = NewVarInt(uint64(h.TruncatedPN().Length + len(payload) + cryptoState.Write.Overhead()))
+		}
+
+		header := packet.EncodeHeader()
+		protectedPayload := cryptoState.Write.Encrypt(payload, uint64(packet.Header().PacketNumber()), header)
+		packetBytes := append(header, protectedPayload...)
+
+		firstByteMask := byte(0x1F)
+		if packet.Header().PacketType() != ShortHeaderPacket {
+			firstByteMask = 0x0F
+		}
+		sample, pnOffset := GetPacketSample(packet.Header(), packetBytes)
+		mask := cryptoState.HeaderWrite.Encrypt(sample, make([]byte, 5, 5))
+		packetBytes[0] ^= mask[0] & firstByteMask
+
+		for i := 0; i < packet.Header().TruncatedPN().Length; i++ {
+			packetBytes[pnOffset+i] ^= mask[1+i]
+		}
+
+		return packetBytes
+	default:
+		// Clients do not send cleartext packets
+	}
+	return nil
+}
+
+//Experimental function: Designed for modular fuzzer
+func (c *Connection) SendFuzzedPacket(packet Packet, payload []byte, level EncryptionLevel) {
+	switch packet.PNSpace() {
+	case PNSpaceInitial, PNSpaceHandshake, PNSpaceAppData:
+		c.Logger.Printf("Sending packet {type=%s, number=%d}\n", packet.Header().PacketType().String(), packet.Header().PacketNumber())
+
+		packetBytes := c.EncodeAndEncryptFuzzedPacket(packet, payload, level)
+		c.UdpConnection.Write(packetBytes)
+		packet.SetSendContext(PacketContext{Timestamp: time.Now(), RemoteAddr: c.UdpConnection.RemoteAddr(), DatagramSize: uint16(len(packetBytes)), PacketSize: uint16(len(packetBytes))})
+
+		c.PacketWasSent(packet)
+	default:
+		// Clients do not send cleartext packets
+	}
+}
+
 func (c *Connection) GetInitialPacket() *InitialPacket {
 	extensionData, err := c.TLSTPHandler.GetExtensionData()
 	if err != nil {
