@@ -13,20 +13,20 @@ func GenerateOverlappingOffset(conn *Connection) []*ProtectedPacket {
 	var validStreams []uint64
 
 	//add check to ensure that this number does not exceed that specified by transport parameters
-	numStreams := R.Intn(40)
+	numStreams := R.Intn(1)
 
 	for i := 0; i <= numStreams; i += 4 {
 		validStreams = append(validStreams, uint64(i))
 	}
 
-	numFragments := R.Intn(10-1) + 1
+	numFragments := R.Intn(3-1) + 1
 
 	var packetList []*ProtectedPacket
 
 	count := 0
 
 	for _, id := range validStreams {
-		dataLength := R.Intn(100-20) + 20
+		dataLength := R.Intn(20-10) + 10
 		for i := 0; i < numFragments; i++ {
 			temp := 0
 			for temp < dataLength {
