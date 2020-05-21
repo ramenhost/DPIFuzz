@@ -31,31 +31,24 @@ After this, run the following commands:
     git clone https://github.com/piano-man/quic-tracker.git
 
 
-The fuzzer is run using the scripts in ``bin/test_suite/``. For help
+The fuzzer is run using the scripts in ``bin/fuzzer/``. For help
 about their usage see:
 
 ::
 
-    go run bin/test_suite/differential_fuzzer.go -h
-    go run bin/test_suite/scenario_runner.go -h
-    go run bin/test_suite/test_suite.go -h
+    go run bin/test_suite/modular_differential_fuzzer.go -h
+    go run bin/test_suite/fuzzer_runner.go -h
 
 
 Brief Explanation about the fuzzer architecture
 ------------------------------------------------
-The fuzzer code is executed using the differential_fuzzer.go script in ``bin/test_suite/``. Remember to use the fuzz flag and set it to 1. 
+The fuzzer code is executed using the fuzzer_runner.go script in ``bin/fuzzer/`` and if you want to use the fuzzer for differential analysis, use the script modular_differential_fuzzer.go in ``bin/fuzzer/`` . Remember to use the fuzz flag and set it to 1. Both these scripts run the fuzzer.go script contained in ``fuzzer/`` which is the actual fuzzer code.
 
-When run without specifying any value for the scenario flag, it will execute all the scenarios against all the hosts specifies in a .txt file which can be created in a format similar to the ietf_quic_hosts.txt file. In case more than one host is specified, the results of the execution will be the following two txt files
+The fuzzer uses the generators in ``generators/`` to generate sequences of packets and the mutators are contained in ``mutators/``.
+When the modular_differential_fuzzer.go script in ``bin/fuzzer/`` is run without specifying any value for the generator flag, it will execute all the fuzzer using all the generators against all the hosts specified in a .txt file which can be created in a format similar to the ietf_quic_hosts.txt file. In case more than one host is specified, the results of the execution will be the following two txt files
 
 
-1. comparison_results.txt :- This specifies all the executions of the scenarios, where a difference in behaviour was detected between the hosts being tested.
-2. seed_map.txt :- This contains a list of source values used for a random number generator for each execution of the senario. This can be used to regeberate the sequence of packets that detected the differences in implementations.
+1. comparison_results.txt :- This specifies all the executions of the fuzzer, where a difference in behaviour was detected between the hosts being tested.
+2. seed_map.txt :- This contains a list of source values used for a random number generator for each execution of the fuzzer. This can be used to regenerate the sequence of packets that detected the differences in implementations.
 
 If vendors of implementations just wish to test their implementations and detect errors using the fuzzer, they can specify their server details in the hosts file and the fuzzer will execute without creating any comparison files.
-
-The fuzzing logic lies in the EncodeandEncrypt function in the connection.go file. Two functions perform the fuzzing operation -
-
-1. fuzz_frame
-2. fuzz_payload
-
-Both of these are located in the connection.go file and the code is self explanatory.
