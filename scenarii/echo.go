@@ -68,21 +68,21 @@ func (s *EchoScenario) Run(conn *Connection, trace *Trace, preferredPath string,
 	// conn.DoSendPacket(pp2, EncryptionLevel1RTT)
 
 	//Successful Difference between quiche and mvfst
-	payload := []byte(fmt.Sprintf("BLIN"))
-	payload2 := []byte(fmt.Sprintf("OCKED"))
+	// payload := []byte(fmt.Sprintf("BLIN"))
+	// payload2 := []byte(fmt.Sprintf("OCKED"))
 
-	pp1 := NewProtectedPacket(conn)
-	pp1.Frames = append(pp1.Frames, NewStreamFrame(4, 7, []byte{}, true))
+	// pp1 := NewProtectedPacket(conn)
+	// pp1.Frames = append(pp1.Frames, NewStreamFrame(4, 7, []byte{}, true))
 
-	pp2 := NewProtectedPacket(conn)
-	pp2.Frames = append(pp2.Frames, NewStreamFrame(4, 2, payload2, false))
+	// pp2 := NewProtectedPacket(conn)
+	// pp2.Frames = append(pp2.Frames, NewStreamFrame(4, 2, payload2, false))
 
-	pp3 := NewProtectedPacket(conn)
-	pp3.Frames = append(pp3.Frames, NewStreamFrame(4, 0, payload, false))
+	// pp3 := NewProtectedPacket(conn)
+	// pp3.Frames = append(pp3.Frames, NewStreamFrame(4, 0, payload, false))
 
-	conn.DoSendPacket(pp1, EncryptionLevel1RTT)
-	conn.DoSendPacket(pp2, EncryptionLevel1RTT)
-	conn.DoSendPacket(pp3, EncryptionLevel1RTT)
+	// conn.DoSendPacket(pp1, EncryptionLevel1RTT)
+	// conn.DoSendPacket(pp2, EncryptionLevel1RTT)
+	// conn.DoSendPacket(pp3, EncryptionLevel1RTT)
 
 	var streamData string = ""
 	streamDataMap := make(map[uint64]string)
