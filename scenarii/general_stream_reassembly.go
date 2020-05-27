@@ -97,6 +97,7 @@ func (s *GeneralStreamReassemblyScenario) Run(conn *Connection, trace *Trace, pr
 	for i, id := range usedStreams {
 		packet := NewProtectedPacket(conn)
 		packetList = append(packetList, packet)
+		// packetList[i+numStreamPackets+numResetPackets+numBlockedPackets].Frames = append(packetList[i+numStreamPackets+numResetPackets+numBlockedPackets].Frames, NewStreamFrame(id, streamDataRecord[id], RandStringBytes(R.Intn(10)), true))
 		packetList[i+numStreamPackets+numResetPackets+numBlockedPackets].Frames = append(packetList[i+numStreamPackets+numResetPackets+numBlockedPackets].Frames, NewStreamFrame(id, streamDataRecord[id], []byte{}, true))
 	}
 

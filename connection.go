@@ -22,6 +22,8 @@ import (
 var R *r.Rand
 var FuzzSession bool = false
 
+// var count int = 0
+
 // var r = csrc.NewRandom(true)
 // var packet_count int = 0
 
@@ -619,7 +621,10 @@ func (c *Connection) DoSendPacketFuzz(packet Packet, level EncryptionLevel) {
 		c.Logger.Printf("Sending packet {type=%s, number=%d}\n", packet.Header().PacketType().String(), packet.Header().PacketNumber())
 
 		packetBytes := c.EncodeAndEncryptFuzz(packet, level)
+		// if count != 3 && count != 3 && count != 5 && count != 5 {
 		c.UdpConnection.Write(packetBytes)
+		// }
+		// count = count + 1
 		packet.SetSendContext(PacketContext{Timestamp: time.Now(), RemoteAddr: c.UdpConnection.RemoteAddr(), DatagramSize: uint16(len(packetBytes)), PacketSize: uint16(len(packetBytes))})
 
 		c.PacketWasSent(packet)

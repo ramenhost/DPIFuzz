@@ -27,7 +27,7 @@ const (
 	ActiveConnectionIdLimit                                = 0x0e
 )
 
-type QuicTransportParameters struct {  // A set of QUIC transport parameters value
+type QuicTransportParameters struct { // A set of QUIC transport parameters value
 	OriginalConnectionId    ConnectionID
 	IdleTimeout             uint64
 	StatelessResetToken     []byte
@@ -39,7 +39,7 @@ type QuicTransportParameters struct {  // A set of QUIC transport parameters val
 	MaxBidiStreams          uint64
 	MaxUniStreams           uint64
 	AckDelayExponent        uint64
-	MaxAckDelay				uint64
+	MaxAckDelay             uint64
 	DisableMigration        bool
 	PreferredAddress        []byte
 	ActiveConnectionIdLimit uint64
@@ -68,7 +68,7 @@ func (list *TransportParameterList) AddParameter(p TransportParameter) {
 }
 
 type EncryptedExtensionsTransportParameters struct {
-	TransportParameterList  `tls:"head=2"`
+	TransportParameterList `tls:"head=2"`
 }
 
 type TLSTransportParameterHandler struct {
@@ -82,7 +82,7 @@ func NewTLSTransportParameterHandler() *TLSTransportParameterHandler {
 }
 func (h *TLSTransportParameterHandler) GetExtensionData() ([]byte, error) {
 	var parameters []TransportParameter
-	addParameter := func(parametersType TransportParametersType, value interface{}){
+	addParameter := func(parametersType TransportParametersType, value interface{}) {
 		switch val := value.(type) {
 		case uint64: // Assumes it is varint then
 			parameters = append(parameters, TransportParameter{parametersType, lib.EncodeVarInt(val)})

@@ -420,7 +420,7 @@ func NewStreamFrame(streamId, offset uint64, data []byte, finBit bool) *StreamFr
 	frame.FinBit = finBit
 	frame.LenBit = true
 	frame.Offset = offset
-	frame.OffBit = false
+	frame.OffBit = frame.Offset > 0
 	frame.Length = uint64(len(data))
 	frame.StreamData = data
 	return frame

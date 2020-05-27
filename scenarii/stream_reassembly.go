@@ -102,8 +102,9 @@ func (s *StreamReassemblyScenario) Run(conn *Connection, trace *Trace, preferred
 		// packetList[i+numPackets].Frames = append(packetList[i+numPackets].Frames, NewStreamFrame(id, streamDataRecord[id], []byte{}, true))
 	}
 
-	// R.Shuffle(len(packetList), func(i, j int) { packetList[i], packetList[j] = packetList[i], packetList[i] })
-	R.Shuffle(len(packetList), func(i, j int) { packetList[i], packetList[j] = packetList[j], packetList[i] })
+	R.Shuffle(len(packetList), func(i, j int) { packetList[i], packetList[j] = packetList[i], packetList[i] })
+	// packetList[7] = packetList[0]
+	// R.Shuffle(len(packetList), func(i, j int) { packetList[i], packetList[j] = packetList[j], packetList[i] })
 	// packet := NewProtectedPacket(conn)
 	// packetList[1] = packet
 	// packetList[1].Frames = append(packetList[1].Frames, NewStreamFrame(8, 18, []byte{}, true))
@@ -121,7 +122,20 @@ func (s *StreamReassemblyScenario) Run(conn *Connection, trace *Trace, preferred
 	}
 
 	for _, packet := range packetList {
+		// for _, f := range packet.Frames {
+		// s := f.(*StreamFrame)
+		// if s.StreamId == 24 {
+		// 	continue
+		// } else {
+		// if i == 9 || i == 3 || i == 5 || i == 1 {
+		// continue
+		// } else {
 		conn.DoSendPacketFuzz(packet, EncryptionLevel1RTT)
+		// }
+		// }
+		// fmt.Println("Testing:", s.StreamId, " FinBit:", s.FinBit, "Payload: ", string(s.StreamData), "Offset: ", s.Offset)
+		// }
+		// conn.DoSendPacketFuzz(packet, EncryptionLevel1RTT)
 	}
 
 	var streamData string = ""
