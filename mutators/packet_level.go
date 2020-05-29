@@ -294,6 +294,12 @@ func fuzz_payload(payload []byte) []byte {
 	case "repeat_payload":
 		fmt.Println("repeating payload")
 		payload = append(payload, payload...)
+		//in accordance with the paper
+		// offset := R.Intn(len(payload))
+		// length := R.Intn(len(payload) - offset)
+		// temp := payload[offset+length:]
+		// payload = append(payload[:offset+length], payload[offset:offset+length]...)
+		// payload = append(payload, temp...)
 
 	case "alter_payload":
 		fmt.Println("altering payload")
@@ -311,6 +317,17 @@ func fuzz_payload(payload []byte) []byte {
 		rand_payload := RandStringBytes(R.Intn(200))
 		fmt.Println(rand_payload)
 		payload = append(payload, rand_payload...)
+		//in accordance with the paper
+		// offset := R.Intn(len(payload))
+		// temp := payload[offset:]
+		// payload = append(payload[:offset], rand_payload...)
+		// payload = append(payload, temp...)
+		//in accordance with the paper
+		// case "drop_payload":
+		// 	fmt.Println("dropping random payload")
+		// 	offset := R.Intn(len(payload))
+		// 	length := R.Intn(len(payload) - offset)
+		// 	payload = append(payload[:offset], payload[offset+length:]...)
 	}
 	return payload
 }
