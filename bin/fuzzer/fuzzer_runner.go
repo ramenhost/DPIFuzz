@@ -25,7 +25,7 @@ func main() {
 	nopcap := flag.Bool("nopcap", false, "Disables the pcap capture.")
 	netInterface := flag.String("interface", "", "The interface to listen to when capturing pcap.")
 	timeout := flag.Int("timeout", 10, "The amount of time in seconds spent when completing the test. Defaults to 10. When set to 0, the test ends as soon as possible.")
-	source := flag.Int64("source", 8817186225503483633, "The source for the random number generator.")
+	source := flag.Int64("source", 8517004308785788003, "The source for the random number generator.")
 	fuzz := flag.Int("fuzz", 0, "Enable Fuzzer.")
 	flag.Parse()
 

@@ -30,7 +30,7 @@ func GenerateOverlappingOffset(conn *Connection) []*ProtectedPacket {
 		for i := 0; i < numFragments; i++ {
 			temp := 0
 			for temp < dataLength {
-				payloadLength := R.Intn(10)
+				payloadLength := R.Intn(5-1) + 1
 				payload := RandStringBytes(payloadLength)
 				streamPacket := NewProtectedPacket(conn)
 				packetList = append(packetList, streamPacket)

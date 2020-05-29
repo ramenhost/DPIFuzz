@@ -49,23 +49,27 @@ func (s *FuzzerInstance) Run(conn *Connection, trace *Trace, preferredPath strin
 		packetList = g.GenerateGeneralStreamReassembly(conn)
 	case "overlapping_offset":
 		packetList = g.GenerateOverlappingOffset(conn)
-
+		R.Shuffle(len(packetList), func(i, j int) { packetList[i], packetList[j] = packetList[j], packetList[i] })
 	}
 
-	//Mutators
-
-	//Sequence Level
-	packetList = m.SequenceLevelMutations(packetList)
-	//Packet Level
-	newList, payloadList := m.PacketLevelMutations(packetList)
-
 	defer connAgents.CloseConnection(false, 0, "")
-
 	incomingPackets := conn.IncomingPackets.RegisterNewChan(1000)
 
-	//Encoder and Encryptor
-	for i := 0; i < len(newList); i++ {
-		conn.SendFuzzedPacket(newList[i], payloadList[i], EncryptionLevel1RTT)
+	//Mutators
+	if generatorName != "overlapping_offset" {
+		//Sequence Level
+		packetList = m.SequenceLevelMutations(packetList)
+		//Packet Level
+		newList, payloadList := m.PacketLevelMutations(packetList)
+
+		//Encoder and Encryptor
+		for i := 0; i < len(newList); i++ {
+			conn.SendFuzzedPacket(newList[i], payloadList[i], EncryptionLevel1RTT)
+		}
+	} else {
+		for i := 0; i < len(packetList); i++ {
+			conn.DoSendPacket(packetList[i], EncryptionLevel1RTT)
+		}
 	}
 
 	//Monitoring IUT Response
