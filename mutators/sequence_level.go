@@ -7,7 +7,7 @@ import (
 
 func SequenceLevelMutations(packetList []*ProtectedPacket) []*ProtectedPacket {
 	R.Shuffle(len(packetList), func(i, j int) { packetList[i], packetList[j] = packetList[i], packetList[i] }) //Modified Shuffle(Shuffle+Drop+Duplicate)
-	// R.Shuffle(len(packetList), func(i, j int) { packetList[i], packetList[j] = packetList[j], packetList[i] })//Standard Shuffle
+	// // R.Shuffle(len(packetList), func(i, j int) { packetList[i], packetList[j] = packetList[j], packetList[i] })//Standard Shuffle
 	return packetList
 
 	//In accordance with the paper

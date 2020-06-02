@@ -290,6 +290,8 @@ func fuzz_payload(payload []byte) []byte {
 	list := [3]string{"repeat_payload", "alter_payload", "add_random_payload"}
 	//test whether math/rand is the right choice for our purpose or not
 	index := R.Intn(3)
+	// list := [4]string{"repeat_payload", "alter_payload", "add_random_payload", "drop_payload"}
+	// index := R.Intn(4)
 	switch list[index] {
 	case "repeat_payload":
 		fmt.Println("repeating payload")
