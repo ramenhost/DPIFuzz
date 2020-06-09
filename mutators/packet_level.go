@@ -2,6 +2,7 @@ package mutators
 
 import (
 	"fmt"
+
 	. "github.com/QUIC-Tracker/quic-tracker"
 )
 
@@ -287,21 +288,27 @@ func fuzz_individual_frame(frame *Frame) {
 
 func fuzz_payload(payload []byte) []byte {
 	fmt.Println("fuzzing payload")
-	list := [3]string{"repeat_payload", "alter_payload", "add_random_payload"}
-	//test whether math/rand is the right choice for our purpose or not
-	index := R.Intn(3)
-	// list := [4]string{"repeat_payload", "alter_payload", "add_random_payload", "drop_payload"}
-	// index := R.Intn(4)
-	switch list[index] {
+	// list := [3]string{"repeat_payload", "alter_payload", "add_random_payload"}
+	// index := R.Intn(3)
+	//in accordance with paper
+	li := []Choice{{1, "repeat_payload"}, {1, "alter_payload"}, {1, "add_random_payload"}, {1, "drop_payload"}}
+	val, err := WeightedChoice(li)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	switch val.Item {
+	//
+	// switch list[index] {
 	case "repeat_payload":
-		fmt.Println("repeating payload")
-		payload = append(payload, payload...)
+		// fmt.Println("repeating payload")
+		// payload = append(payload, payload...)
 		//in accordance with the paper
-		// offset := R.Intn(len(payload))
-		// length := R.Intn(len(payload) - offset)
-		// temp := payload[offset+length:]
-		// payload = append(payload[:offset+length], payload[offset:offset+length]...)
-		// payload = append(payload, temp...)
+		offset := R.Intn(len(payload))
+		length := R.Intn(len(payload) - offset)
+		temp := payload[offset+length:]
+		payload = append(payload[:offset+length], payload[offset:offset+length]...)
+		payload = append(payload, temp...)
+		//
 
 	case "alter_payload":
 		fmt.Println("altering payload")
@@ -316,20 +323,22 @@ func fuzz_payload(payload []byte) []byte {
 		}
 	case "add_random_payload":
 		fmt.Println("adding random payload")
-		rand_payload := RandStringBytes(R.Intn(200))
+		rand_payload := RandStringBytes(len(payload))
 		fmt.Println(rand_payload)
-		payload = append(payload, rand_payload...)
+		// payload = append(payload, rand_payload...)
 		//in accordance with the paper
-		// offset := R.Intn(len(payload))
-		// temp := payload[offset:]
-		// payload = append(payload[:offset], rand_payload...)
-		// payload = append(payload, temp...)
-		//in accordance with the paper
-		// case "drop_payload":
-		// 	fmt.Println("dropping random payload")
-		// 	offset := R.Intn(len(payload))
-		// 	length := R.Intn(len(payload) - offset)
-		// 	payload = append(payload[:offset], payload[offset+length:]...)
+		offset := R.Intn(len(payload))
+		temp := payload[offset:]
+		payload = append(payload[:offset], rand_payload...)
+		payload = append(payload, temp...)
+		//
+	// in accordance with the paper
+	case "drop_payload":
+		fmt.Println("dropping random payload")
+		offset := R.Intn(len(payload))
+		length := R.Intn(len(payload) - offset)
+		payload = append(payload[:offset], payload[offset+length:]...)
+		//
 	}
 	return payload
 }
@@ -339,7 +348,21 @@ func fuzz_frame(packet *Packet) {
 	fmt.Println("fuzzing frame")
 	frames := (*packet).(Framer).GetFrames()
 	for i, _ := range frames {
-		fuzz_decision := R.Float32() < 0.5
+		// fuzz_decision := R.Float32() < 0.5
+		//in accordance with paper
+		var fuzz_decision bool
+		opt := []Choice{{1, "no"}, {1, "yes"}}
+		//shuffle
+		v, e := WeightedChoice(opt)
+		if e != nil {
+			fmt.Println(e.Error())
+		}
+		if v.Item == "yes" {
+			fuzz_decision = true
+		} else {
+			fuzz_decision = false
+		}
+		//
 		if fuzz_decision == true {
 			fuzz_individual_frame(&((*packet).(Framer).GetFrames()[i]))
 		}
@@ -348,7 +371,20 @@ func fuzz_frame(packet *Packet) {
 }
 
 func mutatePacket(packet Packet) (Packet, []byte) {
-	fuzz_decision := R.Float32() < 0.5
+	// fuzz_decision := R.Float32() < 0.5
+	//in accordance with paper
+	var fuzz_decision bool
+	opt := []Choice{{1, "no"}, {1, "yes"}}
+	v, e := WeightedChoice(opt)
+	if e != nil {
+		fmt.Println(e.Error())
+	}
+	if v.Item == "yes" {
+		fuzz_decision = true
+	} else {
+		fuzz_decision = false
+	}
+	//
 	options := []Choice{{1, "fuzz_payload"}, {2, "fuzz_frame"}}
 	val, err := WeightedChoice(options)
 	if err != nil {
@@ -366,14 +402,14 @@ func mutatePacket(packet Packet) (Packet, []byte) {
 }
 
 func PacketLevelMutations(packetList []*ProtectedPacket) ([]*ProtectedPacket, [][]byte) {
-	count := 0
+	// count := 0
 	var payloadList [][]byte
 	var newPacketList []Packet
 	for _, packet := range packetList {
 		new_packet, payload := mutatePacket(packet)
 		newPacketList = append(newPacketList, new_packet)
 		payloadList = append(payloadList, payload)
-		count = count + 1
+		// count = count + 1
 	}
 	return packetList, payloadList
 }
