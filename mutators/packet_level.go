@@ -88,20 +88,26 @@ func fuzz_individual_frame(frame *Frame) {
 			if fuzz_decision := R.Float32() < 0.5; fuzz_decision {
 				switch fuzz_field, _ := WeightedChoice(stream_fields); fuzz_field.Item {
 				case "FinBit":
+					fmt.Println("fuzzing Finbit")
 					(*frame).(*StreamFrame).FinBit = R.Float32() < 0.5
 				case "LenBit":
+					fmt.Println("fuzzing lenbit")
 					(*frame).(*StreamFrame).LenBit = R.Float32() < 0.5
 				case "OffBit":
+					fmt.Println("fuzzing offbit")
 					(*frame).(*StreamFrame).OffBit = R.Float32() < 0.5
 				//we don't fuzz stream id as it is an easy check which can be used to drop packets
 				// case "StreamId":
 				// 	(*frame).(*StreamFrame).StreamId = uint64(R.Uint32())
 				case "Offset":
+					fmt.Println("fuzzing offset")
 					(*frame).(*StreamFrame).Offset = uint64(R.Uint32())
 				case "Length":
+					fmt.Println("fuzzing length")
 					//does it make sense to fuzz both the length field and the stream data field ? It will definitely lead to a conflict
 					(*frame).(*StreamFrame).Length = uint64(R.Uint32())
 				case "StreamData":
+					fmt.Println("fuzzing data")
 					token := make([]byte, len((*frame).(*StreamFrame).StreamData))
 					R.Read(token)
 					(*frame).(*StreamFrame).StreamData = token
@@ -300,7 +306,7 @@ func fuzz_payload(payload []byte) []byte {
 	//
 	// switch list[index] {
 	case "repeat_payload":
-		// fmt.Println("repeating payload")
+		fmt.Println("repeating payload")
 		// payload = append(payload, payload...)
 		//in accordance with the paper
 		offset := R.Intn(len(payload))

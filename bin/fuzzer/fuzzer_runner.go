@@ -5,13 +5,14 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	qt "github.com/QUIC-Tracker/quic-tracker"
-	s "github.com/QUIC-Tracker/quic-tracker/fuzzer"
 	"math/rand"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	qt "github.com/QUIC-Tracker/quic-tracker"
+	s "github.com/QUIC-Tracker/quic-tracker/fuzzer"
 )
 
 func main() {
@@ -25,7 +26,7 @@ func main() {
 	nopcap := flag.Bool("nopcap", false, "Disables the pcap capture.")
 	netInterface := flag.String("interface", "", "The interface to listen to when capturing pcap.")
 	timeout := flag.Int("timeout", 10, "The amount of time in seconds spent when completing the test. Defaults to 10. When set to 0, the test ends as soon as possible.")
-	source := flag.Int64("source", 6229698730496886613, "The source for the random number generator.")
+	source := flag.Int64("source", 7253654666463259418, "The source for the random number generator.")
 	fuzz := flag.Int("fuzz", 0, "Enable Fuzzer.")
 	flag.Parse()
 
