@@ -41,7 +41,7 @@ func GenerateGeneralStreamReassembly(conn *Connection) []*ProtectedPacket {
 		packet := NewProtectedPacket(conn)
 		packetList = append(packetList, packet)
 		resetFrame := new(ResetStream)
-		resetFrame.StreamId = uint64(R.Intn(10) * 4)
+		resetFrame.StreamId = uint64(R.Intn(10))
 		resetFrame.ApplicationErrorCode = uint64(R.Intn(5))
 		resetFrame.FinalSize = uint64(R.Intn(50)) //not sure whether this should be random or should we put the actual value.
 		packetList[i].Frames = append(packetList[i].Frames, resetFrame)
@@ -53,7 +53,7 @@ func GenerateGeneralStreamReassembly(conn *Connection) []*ProtectedPacket {
 		packet := NewProtectedPacket(conn)
 		packetList = append(packetList, packet)
 		blockFrame := new(StreamDataBlockedFrame)
-		blockFrame.StreamId = uint64(R.Intn(10) * 4)
+		blockFrame.StreamId = uint64(R.Intn(10))
 		blockFrame.StreamDataLimit = uint64(R.Intn(50))
 		packetList[i].Frames = append(packetList[i].Frames, blockFrame)
 	}
