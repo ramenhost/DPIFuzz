@@ -12,7 +12,7 @@ func SequenceLevelMutations(packetList []*ProtectedPacket) []*ProtectedPacket {
 	// return packetList
 
 	//In accordance with the paper
-	options := []Choice{{1, "no"}, {1, "yes"}}
+	options := []Choice{{1, "no"}, {2, "yes"}}
 	//shuffle
 	val, err := WeightedChoice(options)
 	if err != nil {
@@ -22,7 +22,7 @@ func SequenceLevelMutations(packetList []*ProtectedPacket) []*ProtectedPacket {
 		R.Shuffle(len(packetList), func(i, j int) { packetList[i], packetList[j] = packetList[j], packetList[i] })
 	}
 	//duplicate
-	options = []Choice{{1, "no"}, {1, "yes"}}
+	options = []Choice{{1, "no"}, {2, "yes"}}
 	val, err = WeightedChoice(options)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -33,7 +33,7 @@ func SequenceLevelMutations(packetList []*ProtectedPacket) []*ProtectedPacket {
 		for i := 0; i < len(packetList); i++ {
 			if R.Float32() < 0.5 {
 				l = append(l, i)
-				d = append(d, R.Intn(5)) //duplication factor
+				d = append(d, R.Intn(4)+1) //duplication factor
 			}
 		}
 		for j := 0; j < len(l); j++ {
@@ -44,7 +44,7 @@ func SequenceLevelMutations(packetList []*ProtectedPacket) []*ProtectedPacket {
 		R.Shuffle(len(packetList), func(i, j int) { packetList[i], packetList[j] = packetList[j], packetList[i] })
 	}
 	//drop
-	options = []Choice{{1, "no"}, {1, "yes"}}
+	options = []Choice{{1, "no"}, {0, "yes"}}
 	val, err = WeightedChoice(options)
 	if err != nil {
 		fmt.Println(err.Error())

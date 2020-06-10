@@ -4,11 +4,12 @@ package fuzzer
 import (
 	// "bytes"
 	"fmt"
+	"sort"
+	"strings"
+
 	. "github.com/QUIC-Tracker/quic-tracker"
 	g "github.com/QUIC-Tracker/quic-tracker/generators"
 	m "github.com/QUIC-Tracker/quic-tracker/mutators"
-	"sort"
-	"strings"
 	// "time"
 )
 
@@ -59,6 +60,7 @@ func (s *FuzzerInstance) Run(conn *Connection, trace *Trace, preferredPath strin
 	if generatorName != "overlapping_offset" {
 		//Sequence Level
 		packetList = m.SequenceLevelMutations(packetList)
+
 		//Packet Level
 		newList, payloadList := m.PacketLevelMutations(packetList)
 
