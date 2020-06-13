@@ -28,7 +28,8 @@ After this, run the following commands:
 
     cd $GOPATH/src/github.com/QUIC-Tracker
     rm -rf quic-tracker
-    git clone https://github.com/piano-man/quic-tracker.git
+    git clone https://github.com/piano-man/DPIFuzz.git
+    mv ./DPIFuzz ./quic-tracker
 
 
 The fuzzer is run using the scripts in ``bin/fuzzer/``. For help
