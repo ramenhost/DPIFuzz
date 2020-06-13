@@ -1,7 +1,7 @@
 A Structured Fuzzing Framework for the QUIC Protocol
 =====================
 
-The Fuzzing framework is designed as an extension of QUIC-Tracker(a test suite which comprises a minimal Go implementation of QUIC which is currently draft-27 and TLS-1.3 compatible.)
+The Fuzzing framework is designed using the QUIC API provided by QUIC-Tracker(a test suite which comprises a minimal Go implementation of QUIC). It is currently draft-27 and TLS-1.3 compatible.
 
 Installation
 ------------
