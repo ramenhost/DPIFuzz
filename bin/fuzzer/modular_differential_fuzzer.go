@@ -303,12 +303,12 @@ func main() {
 
 					//pick any part of trace that you want to compare between different hosts and write it to the file
 					out_3, _ := json.Marshal(trace.Results["StreamDataReassembly"])
-					fmt.Println("Data: ", string(out_3), " Seed:", source)
-					// 	out_1, _ := json.Marshal(trace.ErrorCode)
+					out_1, _ := json.Marshal(trace.ErrorCode)
+					fmt.Println("Data: ", string(out_3), " Seed:", source, "ErrorCode:", string(out_1))
 					// 	out_2, _ := json.Marshal(trace.DiffCodes)
-					// 	if len(out_1) != 0 {
-					// 		traceFile.Write(out_1)
-					// 	}
+					if len(out_1) != 0 {
+						traceFile.Write(out_1)
+					}
 					// 	if len(out_2) != 0 {
 					// 		traceFile.Write(out_2)
 					// 	}
