@@ -12,11 +12,17 @@ openssl headers installed before starting.
 Run these command as well
 
 ``sudo apt-get install faketime libscope-guard-perl libtest-tcp-perl``
+
 ``sudo apt-get install make``
+
 ``sudo apt-get install cmake``
+
 ``sudo apt-get install build-essential``
+
 ``sudo apt-get install pkg-config``
+
 ``sudo apt-get install libssl-dev``
+
 
 ::
 
