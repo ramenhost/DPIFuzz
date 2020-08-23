@@ -17,6 +17,8 @@ const (
 	F_TLSHandshakeFailed       = 1
 	F_HostDidNotRespond        = 2
 	F_EndpointDoesNotSupportHQ = 3
+	F_Timeout                  = 4
+	F_HostClosedConnection     = 5
 )
 
 type FuzzerInstance struct {
@@ -82,9 +84,9 @@ forLoop:
 	for {
 		select {
 		case i := <-incomingPackets:
-			if conn.Streams.Get(0).ReadClosed {
-				s.Finished()
-			}
+			// if conn.Streams.Get(0).ReadClosed {
+			// 	s.Finished()
+			// }
 
 			p := i.(Packet)
 			if p.PNSpace() == PNSpaceAppData {
@@ -95,8 +97,10 @@ forLoop:
 				}
 			}
 		case <-conn.ConnectionClosed:
+			trace.ErrorCode = F_HostClosedConnection
 			break forLoop
 		case <-s.Timeout():
+			trace.ErrorCode = F_Timeout
 			break forLoop
 		}
 	}
@@ -110,7 +114,7 @@ forLoop:
 	}
 	fmt.Println("Stream Data: ", streamData)
 	trace.Results["StreamDataReassembly"] = streamData
-	if !conn.Streams.Get(0).ReadClosed {
-		trace.ErrorCode = F_HostDidNotRespond
-	}
+	// if !conn.Streams.Get(0).ReadClosed {
+	// 	trace.ErrorCode = F_HostDidNotRespond
+	// }
 }
