@@ -47,8 +47,8 @@ about their usage see:
 
 ::
 
-    go run bin/test_suite/modular_differential_fuzzer.go -h
-    go run bin/test_suite/fuzzer_runner.go -h
+    go run bin/fuzzer/modular_differential_fuzzer.go -h
+    go run bin/fuzzer/fuzzer_runner.go -h
 
 
 Brief Explanation about the fuzzer architecture
@@ -56,7 +56,7 @@ Brief Explanation about the fuzzer architecture
 The fuzzer code is executed using the fuzzer_runner.go script in ``bin/fuzzer/`` and if you want to use the fuzzer for differential analysis, use the script modular_differential_fuzzer.go in ``bin/fuzzer/`` . Remember to use the fuzz flag and set it to 1. Both these scripts run the fuzzer.go script contained in ``fuzzer/`` which is the actual fuzzer code.
 
 The fuzzer uses the generators in ``generators/`` to generate sequences of packets and the mutators are contained in ``mutators/``.
-When the modular_differential_fuzzer.go script in ``bin/fuzzer/`` is run without specifying any value for the generator flag, it will execute all the fuzzer using all the generators against all the hosts specified in a .txt file which can be created in a format similar to the ietf_quic_hosts.txt file. In case more than one host is specified, the results of the execution will be the following two txt files
+When the modular_differential_fuzzer.go script in ``bin/fuzzer/`` is run without specifying any value for the generator flag, it will execute the fuzzer using all the generators against all the hosts specified in a .txt file which can be created in a format similar to the ietf_quic_hosts.txt file. In case more than one host is specified, the results of the execution will be the following two .txt files
 
 
 1. comparison_results.txt :- This specifies all the executions of the fuzzer, where a difference in behaviour was detected between the hosts being tested.
