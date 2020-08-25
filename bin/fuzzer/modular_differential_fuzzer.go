@@ -138,13 +138,13 @@ func main() {
 	generatorName := flag.String("generator", "", "A particular generator to use. Use all of them if the parameter is missing.")
 	traceDirectory := flag.String("trace-directory", "/tmp", "Location of the trace files.")
 	netInterface := flag.String("interface", "", "The interface to listen to when capturing pcaps. Lets tcpdump decide if not set.")
-	parallel := flag.Bool("parallel", false, "Runs each scenario against multiple hosts at the same time.")
-	maxInstances := flag.Int("max-instances", 2, "Limits the number of parallel scenario runs.")
+	parallel := flag.Bool("parallel", false, "Runs each fuzzer instance against multiple hosts at the same time.")
+	maxInstances := flag.Int("max-instances", 2, "Limits the number of parallel fuzzer runs.")
 	// randomise := flag.Bool("randomise", false, "Randomise the execution order of scenarii")
-	timeout := flag.Int("timeout", 10, "The amount of time in seconds spent when completing a test. Defaults to 10. When set to 0, each test ends as soon as possible.")
+	timeout := flag.Int("timeout", 20, "The amount of time in seconds spent when completing a test. Defaults to 10. When set to 0, each test ends as soon as possible.")
 	debug := flag.Bool("debug", false, "Enables debugging information to be printed.")
 	fuzz := flag.Int("fuzz", 0, "Enable fuzzer.")
-	iterations := flag.Int("iterations", 1, "Number of times we want to execute a scenario.")
+	iterations := flag.Int("iterations", 1, "Number of times we want to execute a the fuzzer with a specific generator against a host.")
 	flag.Parse()
 
 	_, filename, _, ok := runtime.Caller(0)
@@ -152,7 +152,7 @@ func main() {
 		println("No caller information")
 		os.Exit(-1)
 	}
-	scenarioRunnerFilename := p.Join(p.Dir(filename), "fuzzer_runner.go")
+	fuzzerRunnerFilename := p.Join(p.Dir(filename), "fuzzer_runner.go")
 
 	fmt.Println(*parallel)
 	fmt.Println(*maxInstances)
@@ -177,21 +177,7 @@ func main() {
 	}
 	file.Seek(0, 0)
 
-	// scenariiInstances := scenarii.GetAllScenarii()
-
 	m := NewConcurrentMap() //map to store seed values with scenario name and iteration number
-
-	// var scenarioIds []string
-	// for scenarioId := range scenariiInstances {
-	// 	scenarioIds = append(scenarioIds, scenarioId)
-	// }
-	// if !*randomise {
-	// 	sort.Strings(scenarioIds)
-	// }
-
-	// if *scenarioName != "" && scenariiInstances[*scenarioName] == nil {
-	// 	println("Unknown scenario", *scenarioName)
-	// }
 
 	generatorList := []string{"stream_reassembly", "general_stream_reassembly", "overlapping_offset"}
 
@@ -207,7 +193,7 @@ func main() {
 		if *generatorName != "" && *generatorName != id {
 			continue
 		}
-		// scenario := scenariiInstances[0]
+
 		gname := id
 		os.MkdirAll(p.Join(*traceDirectory, gname), os.ModePerm)
 		for j := 0; j < *iterations; j++ {
@@ -258,9 +244,7 @@ func main() {
 					}
 					outputFile.Close()
 
-					// crashTrace := GetCrashTrace(scenario, host) // Prepare one just in case
-					// start := time.Now()
-					args := []string{"run", scenarioRunnerFilename, "-host", host, "-path", path, "-alpn", preferredALPN, "-generator", gname, "-interface", *netInterface, "-output", outputFile.Name(), "-timeout", strconv.Itoa(*timeout), "-source", strconv.FormatInt(source, 10), "-fuzz", strconv.Itoa(*fuzz)}
+					args := []string{"run", fuzzerRunnerFilename, "-host", host, "-path", path, "-alpn", preferredALPN, "-generator", gname, "-interface", *netInterface, "-output", outputFile.Name(), "-timeout", strconv.Itoa(*timeout), "-source", strconv.FormatInt(source, 10), "-fuzz", strconv.Itoa(*fuzz)}
 					if *debug {
 						args = append(args, "-debug")
 					}
@@ -323,7 +307,24 @@ func main() {
 
 	//check for the number of hosts first. Proceed if > 1
 	if hostCount > 1 {
+		//The commented code can be used to print all the seed values for a particular execution of DPIFuzz
+		// seedMap := make(map[string]int64)
+		// for val := range m.Iter() {
+		// 	seedMap[val.Key] = val.Value.(int64)
+		// }
 
+		// //creating files
+		// seedFile, err := os.Create(p.Join(p.Dir(filename), "seed_map.txt"))
+		// if err != nil {
+		// 	println(err.Error())
+		// }
+		// defer seedFile.Close()
+		// seedResult, err := json.Marshal(seedMap)
+		// if err != nil {
+		// 	println(err.Error())
+		// 	return
+		// }
+		// seedFile.Write(seedResult)
 		resultList := getFuzzerResultsSequential(generatorName, generatorList, hostsFilename, *iterations, maxInstances, traceDirectory, m)
 		//creating files
 		resultFile, err := os.Create(p.Join(p.Dir(filename), "comparison_results.txt"))
