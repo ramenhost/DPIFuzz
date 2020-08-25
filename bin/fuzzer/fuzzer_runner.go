@@ -103,7 +103,8 @@ func main() {
 			println(err.Error())
 		}
 	} else {
-		println(string(out))
+		//println(string(out))
+		println("ReassembledData:", trace.Results["StreamDataReassembly"].(string))
+		println("ErrorCode:", trace.ErrorCode)
 	}
-
 }

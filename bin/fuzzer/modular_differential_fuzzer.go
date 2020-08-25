@@ -19,7 +19,7 @@ import (
 	"os/exec"
 	p "path"
 	"runtime"
-	"sort"
+	//"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -141,7 +141,7 @@ func main() {
 	parallel := flag.Bool("parallel", false, "Runs each scenario against multiple hosts at the same time.")
 	maxInstances := flag.Int("max-instances", 2, "Limits the number of parallel scenario runs.")
 	// randomise := flag.Bool("randomise", false, "Randomise the execution order of scenarii")
-	timeout := flag.Int("timeout", 15, "The amount of time in seconds spent when completing a test. Defaults to 15. When set to 0, each test ends as soon as possible.")
+	timeout := flag.Int("timeout", 10, "The amount of time in seconds spent when completing a test. Defaults to 10. When set to 0, each test ends as soon as possible.")
 	debug := flag.Bool("debug", false, "Enables debugging information to be printed.")
 	fuzz := flag.Int("fuzz", 0, "Enable fuzzer.")
 	iterations := flag.Int("iterations", 1, "Number of times we want to execute a scenario.")
@@ -304,6 +304,7 @@ func main() {
 					//pick any part of trace that you want to compare between different hosts and write it to the file
 					out_3, _ := json.Marshal(trace.Results["StreamDataReassembly"])
 					out_1, _ := json.Marshal(trace.ErrorCode)
+
 					fmt.Println("Data: ", string(out_3), " Seed:", source, "ErrorCode:", string(out_1))
 					// 	out_2, _ := json.Marshal(trace.DiffCodes)
 					if len(out_1) != 0 {
@@ -323,43 +324,20 @@ func main() {
 	//check for the number of hosts first. Proceed if > 1
 	if hostCount > 1 {
 
-		resultList := getFuzzerResults(generatorName, generatorList, hostsFilename, *iterations, maxInstances, traceDirectory)
-		sort.Strings(resultList)
-		//iterate and print map here if required
-		seedMap := make(map[string]int64)
-		for val := range m.Iter() {
-			seedMap[val.Key] = val.Value.(int64)
-		}
-
+		resultList := getFuzzerResultsSequential(generatorName, generatorList, hostsFilename, *iterations, maxInstances, traceDirectory, m)
 		//creating files
-		seedFile, err := os.Create(p.Join(p.Dir(filename), "seed_map.txt"))
-		if err != nil {
-			println(err.Error())
-		}
-		defer seedFile.Close()
-		seedResult, err := json.Marshal(seedMap)
-		if err != nil {
-			println(err.Error())
-			return
-		}
-		seedFile.Write(seedResult)
-
 		resultFile, err := os.Create(p.Join(p.Dir(filename), "comparison_results.txt"))
 		if err != nil {
 			println(err.Error())
 		}
 		defer resultFile.Close()
-		comparisonResult, err := json.Marshal(resultList)
-		if err != nil {
-			println(err.Error())
-			return
-		}
-		resultFile.Write(comparisonResult)
+		resultFile.WriteString(resultList)
 	}
 
 	return
 }
 
+//test function to concurrently compute and compare hash values. Prototype stage
 func getFuzzerResults(generatorName *string, generatorList []string, hostsFilename *string, iterations int, maxInstances *int, traceDirectory *string) []string {
 	var result []string
 
@@ -446,6 +424,80 @@ func getFuzzerResults(generatorName *string, generatorList []string, hostsFilena
 		result = append(result, val.Value.(string))
 	}
 	return result
+}
+
+func getFuzzerResultsSequential(generatorName *string, generatorList []string, hostsFilename *string, iterations int, maxInstances *int, traceDirectory *string, seedMap *ConcurrentMap) string {
+
+	type hosthash struct {
+		host string
+		hash []byte
+	}
+
+	m := make(map[string][]hosthash) //map to store the hash values of trace files of different hosts corresponding to a particular iteration of a fuzzer with a specific generator
+
+	file, err := os.Open(*hostsFilename)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	for _, id := range generatorList {
+		if *generatorName != "" && *generatorName != id {
+			continue
+		}
+		gname := id
+
+		for j := 0; j < iterations; j++ {
+			scanner := bufio.NewScanner(file)
+			iter := j
+			for scanner.Scan() {
+				line := strings.Split(scanner.Text(), "\t")
+				host, _ := line[0], line[1]
+
+				//calculating hash values
+				f, err := os.Open(p.Join(*traceDirectory, gname, host+"_"+strconv.Itoa(iter)))
+				h := sha256.New()
+				if err != nil {
+					println(err.Error())
+					m[gname+"_"+strconv.Itoa(iter)] = append(m[gname+"_"+strconv.Itoa(iter)], hosthash{host, h.Sum(nil)})
+					f.Close()
+					continue
+				}
+				if _, err := io.Copy(h, f); err != nil {
+					println(err)
+				}
+				f.Close()
+				hash := h.Sum(nil)
+				m[gname+"_"+strconv.Itoa(iter)] = append(m[gname+"_"+strconv.Itoa(iter)], hosthash{host, hash})
+			}
+			file.Seek(0, 0)
+		}
+	}
+	//comparing hash values
+	res := ""
+	for key, val := range m {
+		res += key
+		res += "\t"
+		seed, success := seedMap.Get(key)
+		if success == false {
+			continue
+		}
+		res += strconv.FormatInt(seed.(int64), 10) + "\t"
+		l := len(val)
+		for i := 0; i < l; i++ {
+			res += val[i].host
+			res += "--"
+			for j := 0; j < l; j++ {
+				if bytes.Compare(val[i].hash, val[j].hash) != 0 {
+					res += val[j].host
+					res += ","
+				}
+			}
+			res += "\t\t"
+		}
+		res += "\n"
+	}
+	return res
 }
 
 // func GetCrashTrace(scenario scenarii.Scenario, host string) *qt.Trace {
