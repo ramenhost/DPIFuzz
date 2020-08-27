@@ -104,10 +104,9 @@ func main() {
 		}
 	} else {
 		//println(string(out))
-		if trace.Results["StreamDataReassembly"]!=nil {
+		if trace.Results["StreamDataReassembly"] != nil {
 			println("ReassembledData:", trace.Results["StreamDataReassembly"].(string))
-		}
-		else{
+		} else {
 			println("ReassembledData:", trace.Results["StreamDataReassembly"])
 		}
 		println("ErrorCode:", trace.ErrorCode)
