@@ -72,7 +72,7 @@ func (list *TransportParameterList) AddParameter(p TransportParameter) {
 }
 
 type EncryptedExtensionsTransportParameters struct {
-	TransportParameterList  `tls:"head=2"`
+	TransportParameterList `tls:"head=2"`
 }
 
 type TLSTransportParameterHandler struct {
@@ -82,11 +82,11 @@ type TLSTransportParameterHandler struct {
 }
 
 func NewTLSTransportParameterHandler(scid ConnectionID) *TLSTransportParameterHandler {
-	return &TLSTransportParameterHandler{QuicTransportParameters: QuicTransportParameters{MaxStreamDataBidiLocal: 16 * 1024, MaxStreamDataUni: 16 * 1024, MaxData: 32 * 1024, MaxBidiStreams: 1, MaxUniStreams: 3, IdleTimeout: 10000, AckDelayExponent: 3, ActiveConnectionIdLimit: 4, InitialSourceConnectionId: scid}}
+	return &TLSTransportParameterHandler{QuicTransportParameters: QuicTransportParameters{MaxStreamDataBidiLocal: 16 * 1024, MaxStreamDataUni: 16 * 1024, MaxData: 32 * 1024, MaxBidiStreams: 1, MaxUniStreams: 3, IdleTimeout: 25000, AckDelayExponent: 3, ActiveConnectionIdLimit: 4, InitialSourceConnectionId: scid}}
 }
 func (h *TLSTransportParameterHandler) GetExtensionData() ([]byte, error) {
 	var parameters []TransportParameter
-	addParameter := func(parametersType TransportParametersType, value interface{}){
+	addParameter := func(parametersType TransportParametersType, value interface{}) {
 		switch val := value.(type) {
 		case uint64: // Assumes it is varint then
 			parameters = append(parameters, TransportParameter{parametersType, lib.EncodeVarInt(val)})
