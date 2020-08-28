@@ -15,7 +15,7 @@ The repository is structured in the following way:
 
 * ``generators/`` -- Contains four different generators used to generate sequences of QUIC packets:
                     * Basic Stream Reassembly (``stream_reassembly.go``)
-                    * Flow-Control-Aware Stream Reassembly (``general_stream_reassembly.go``)
+                    * Flow-Control-Aware Stream Reassembly (``flow_control_stream_reassembly.go``)
                     * Overlapping Offset (``overlapping_offset.go``)
                     * Randomised (``randomised.go``)
 
@@ -87,11 +87,11 @@ Sample Commands for reference:
 * **modular_differential_fuzzer.go** - 
 ::
     
-    go run bin/fuzzer/modular_differential_fuzzer.go -hosts hosts.txt -max-instances <integer value> -iterations <integer value> -parallel=<true/false> -generator   <stream_reassembly/general_stream_reassembly/overlapping_offset> -debug=<true/false> -trace-directory <directory name where you want to store the trace files> -fuzz 1
+    go run bin/fuzzer/modular_differential_fuzzer.go -hosts hosts.txt -max-instances <integer value> -iterations <integer value> -parallel=<true/false> -generator   <stream_reassembly/flow_control_stream_reassembly/overlapping_offset> -debug=<true/false> -trace-directory <directory name where you want to store the trace files> -fuzz 1
 
 NOTE: Please make sure that the trace file directory exists before running the command
     
 * **fuzzer_runner.go** - 
 ::
 
-    go run bin/fuzzer/fuzzer_runner.go -host <host IP:port> -generator <stream_reassembly/general_stream_reassembly/overlapping_offset> -debug=<true/false> -alpn <hq/h3> -fuzz 1 -source <seed value>
+    go run bin/fuzzer/fuzzer_runner.go -host <host IP:port> -generator <stream_reassembly/flow_control_stream_reassembly/overlapping_offset> -debug=<true/false> -alpn <hq/h3> -fuzz 1 -source <seed value>

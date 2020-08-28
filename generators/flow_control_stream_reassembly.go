@@ -9,7 +9,7 @@ import (
 	// // "time"
 )
 
-func GenerateGeneralStreamReassembly(conn *Connection) []*ProtectedPacket {
+func GenerateFlowControlStreamReassembly(conn *Connection) []*ProtectedPacket {
 	var validStreams []uint64
 	var usedStreams []uint64
 	streamDataRecord := make(map[uint64]uint64)
