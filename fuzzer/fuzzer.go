@@ -63,6 +63,17 @@ func (s *FuzzerInstance) Run(conn *Connection, trace *Trace, preferredPath strin
 		//Sequence Level
 		packetList = m.SequenceLevelMutations(packetList)
 
+		//printing stream frame contents. Comment out if not required
+		for _, packet := range packetList {
+			for _, f := range packet.Frames {
+				if f.FrameType() == StreamType {
+					s := f.(*StreamFrame)
+					fmt.Println("-*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*")
+					fmt.Println("Stream Id:", s.StreamId, " FinBit:", s.FinBit, "Payload: ", string(s.StreamData), "Offset: ", s.Offset, "OffBit:", s.OffBit, "LenBit:", s.LenBit, "Length:", s.Length)
+					fmt.Println("-*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*")
+				}
+			}
+		}
 		//Packet Level
 		newList, payloadList := m.PacketLevelMutations(packetList)
 
@@ -71,6 +82,17 @@ func (s *FuzzerInstance) Run(conn *Connection, trace *Trace, preferredPath strin
 			conn.SendFuzzedPacket(newList[i], payloadList[i], EncryptionLevel1RTT)
 		}
 	} else {
+		//printing stream frame contents. Comment out if not required
+		for _, packet := range packetList {
+			for _, f := range packet.Frames {
+				if f.FrameType() == StreamType {
+					s := f.(*StreamFrame)
+					fmt.Println("-*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*")
+					fmt.Println("Stream Id:", s.StreamId, " FinBit:", s.FinBit, "Payload: ", string(s.StreamData), "Offset: ", s.Offset, "OffBit:", s.OffBit, "LenBit:", s.LenBit, "Length:", s.Length)
+					fmt.Println("-*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*")
+				}
+			}
+		}
 		for i := 0; i < len(packetList); i++ {
 			conn.DoSendPacket(packetList[i], EncryptionLevel1RTT)
 		}
@@ -112,7 +134,7 @@ forLoop:
 	for _, k := range keys {
 		streamData += streamDataMap[k]
 	}
-	fmt.Println("Stream Data: ", streamData)
+	// fmt.Println("Stream Data: ", streamData)
 	trace.Results["StreamDataReassembly"] = streamData
 	// if !conn.Streams.Get(0).ReadClosed {
 	// 	trace.ErrorCode = F_HostDidNotRespond
