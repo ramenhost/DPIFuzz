@@ -179,7 +179,7 @@ func main() {
 
 	m := NewConcurrentMap() //map to store seed values with scenario name and iteration number
 
-	generatorList := []string{"stream_reassembly", "general_stream_reassembly", "overlapping_offset"}
+	generatorList := []string{"stream_reassembly", "flow_control_stream_reassembly", "overlapping_offset"}
 
 	wg := &sync.WaitGroup{}
 	if !*parallel {

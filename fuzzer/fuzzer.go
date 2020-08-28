@@ -48,8 +48,8 @@ func (s *FuzzerInstance) Run(conn *Connection, trace *Trace, preferredPath strin
 	switch generatorName {
 	case "stream_reassembly":
 		packetList = g.GenerateStreamReassembly(conn)
-	case "general_stream_reassembly":
-		packetList = g.GenerateGeneralStreamReassembly(conn)
+	case "flow_control_stream_reassembly":
+		packetList = g.GenerateFlowControlStreamReassembly(conn)
 	case "overlapping_offset":
 		packetList = g.GenerateOverlappingOffset(conn)
 		R.Shuffle(len(packetList), func(i, j int) { packetList[i], packetList[j] = packetList[j], packetList[i] })
