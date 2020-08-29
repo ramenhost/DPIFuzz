@@ -31,7 +31,7 @@ func (a *ClosingAgent) Run(conn *Connection) { // TODO: Observe incoming CC and 
 		for {
 			select {
 			case <-incomingPackets:
-				a.IdleTimeout.Reset(a.IdleDuration)
+				//a.IdleTimeout.Reset(a.IdleDuration)
 			case i := <-outgoingPackets:
 				switch p := i.(type) {
 				case Framer:
@@ -41,7 +41,7 @@ func (a *ClosingAgent) Run(conn *Connection) { // TODO: Observe incoming CC and 
 					}
 				}
 				if p := i.(Packet); p.ShouldBeAcknowledged() {
-					a.IdleTimeout.Reset(a.IdleDuration)
+					//a.IdleTimeout.Reset(a.IdleDuration)
 				}
 			case <-a.IdleTimeout.C:
 				a.closing = true
