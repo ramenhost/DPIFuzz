@@ -121,14 +121,18 @@ forLoop:
 					streamDataMap[s.StreamId] += string(stream.ReadData)
 				}
 			}
-		case <-conn.ConnectionClosed: //this is triggered by IdleTimeout. Occurs after s.Timeout(). Checks if host has not responded to determine whether it crashed or not
+		case <-conn.ConnectionClosed: //this is triggered by IdleTimeout. Occurs after s.Timeout(). Checks if host is responding or not
 			if trace.ErrorCode == 0 { //check if a packet was received after flag was set to 1
 				trace.ErrorCode = F_Timeout
 			}
 			break forLoop
 		case <-s.Timeout(): //triggered by the timeout specified using command line flag. Value < IdleTimeout ensures that this block is hit before conn.ConnectionClosed
 			flag = 1
-			//send a packet which triggers a response
+			//send packets which triggers a response
+			payload := []byte(fmt.Sprintf("Echo"))
+			pp1 := NewProtectedPacket(conn)
+			pp1.Frames = append(pp1.Frames, NewStreamFrame(4, uint64(len(payload)), []byte{}, true))
+			conn.DoSendPacket(pp1, EncryptionLevel1RTT)
 			const ForceVersionNegotiation = 0x1a2a3a4a
 			conn.Version = ForceVersionNegotiation
 			initial := conn.GetInitialPacket()
