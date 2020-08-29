@@ -32,7 +32,7 @@ func NewFuzzerInstance() *FuzzerInstance {
 func (s *FuzzerInstance) Run(conn *Connection, trace *Trace, preferredPath string, debug bool, generatorName string) {
 
 	//Connection Handler
-
+	flag := 0 //flag used to determine whether host has crashed or not
 	if !strings.Contains(conn.ALPN, "hq") && !strings.Contains(conn.ALPN, "h3") {
 		trace.ErrorCode = F_EndpointDoesNotSupportHQ
 		return
@@ -109,7 +109,9 @@ forLoop:
 			// if conn.Streams.Get(0).ReadClosed {
 			// 	s.Finished()
 			// }
-
+			if flag == 1 {
+				trace.ErrorCode = F_HostClosedConnection
+			}
 			p := i.(Packet)
 			if p.PNSpace() == PNSpaceAppData {
 				for _, f := range p.(Framer).GetAll(StreamType) {
@@ -118,12 +120,20 @@ forLoop:
 					streamDataMap[s.StreamId] += string(stream.ReadData)
 				}
 			}
-		case <-conn.ConnectionClosed:
-			trace.ErrorCode = F_HostClosedConnection
+		case <-conn.ConnectionClosed: //this is triggered by IdleTimeout. Occurs after s.Timeout(). Checks if host has not responded to determine whether it crashed or not
+			if trace.ErrorCode == 0 { //check if a packet was received after flag was set to 1
+				trace.ErrorCode = F_Timeout
+			}
 			break forLoop
-		case <-s.Timeout():
-			trace.ErrorCode = F_Timeout
-			break forLoop
+		case <-s.Timeout(): //triggered by the timeout specified using command line flag. Value < IdleTimeout ensures that this block is hit before conn.ConnectionClosed
+			flag = 1
+			//send a packet which triggers a response
+			payload := []byte(fmt.Sprintf("Echo"))
+			pp1 := NewProtectedPacket(conn)
+			pp1.Frames = append(pp1.Frames, NewStreamFrame(4, uint64(len(payload)), []byte{}, true))
+			conn.DoSendPacket(pp1, EncryptionLevel1RTT)
+			// trace.ErrorCode = F_Timeout
+			//break forLoop
 		}
 	}
 	var keys []uint64

@@ -141,7 +141,7 @@ func main() {
 	parallel := flag.Bool("parallel", false, "Runs each fuzzer instance against multiple hosts at the same time.")
 	maxInstances := flag.Int("max-instances", 2, "Limits the number of parallel fuzzer runs.")
 	// randomise := flag.Bool("randomise", false, "Randomise the execution order of scenarii")
-	timeout := flag.Int("timeout", 20, "The amount of time in seconds spent when completing a test. Defaults to 10. When set to 0, each test ends as soon as possible.")
+	timeout := flag.Int("timeout", 10, "The amount of time in seconds spent when completing a test. Defaults to 10. When set to 0, each test ends as soon as possible.")
 	debug := flag.Bool("debug", false, "Enables debugging information to be printed.")
 	fuzz := flag.Int("fuzz", 0, "Enable fuzzer.")
 	iterations := flag.Int("iterations", 1, "Number of times we want to execute a the fuzzer with a specific generator against a host.")
