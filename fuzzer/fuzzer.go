@@ -18,7 +18,7 @@ const (
 	F_HostDidNotRespond        = 2
 	F_EndpointDoesNotSupportHQ = 3
 	F_Timeout                  = 4
-	F_HostClosedConnection     = 5
+	F_HostisAlive              = 5
 )
 
 type FuzzerInstance struct {
@@ -110,7 +110,8 @@ forLoop:
 			// 	s.Finished()
 			// }
 			if flag == 1 {
-				trace.ErrorCode = F_HostClosedConnection
+				trace.ErrorCode = F_HostisAlive
+				continue
 			}
 			p := i.(Packet)
 			if p.PNSpace() == PNSpaceAppData {
@@ -128,10 +129,10 @@ forLoop:
 		case <-s.Timeout(): //triggered by the timeout specified using command line flag. Value < IdleTimeout ensures that this block is hit before conn.ConnectionClosed
 			flag = 1
 			//send a packet which triggers a response
-			payload := []byte(fmt.Sprintf("Echo"))
-			pp1 := NewProtectedPacket(conn)
-			pp1.Frames = append(pp1.Frames, NewStreamFrame(4, uint64(len(payload)), []byte{}, true))
-			conn.DoSendPacket(pp1, EncryptionLevel1RTT)
+			const ForceVersionNegotiation = 0x1a2a3a4a
+			conn.Version = ForceVersionNegotiation
+			initial := conn.GetInitialPacket()
+			conn.DoSendPacket(initial, EncryptionLevelInitial)
 			// trace.ErrorCode = F_Timeout
 			//break forLoop
 		}
