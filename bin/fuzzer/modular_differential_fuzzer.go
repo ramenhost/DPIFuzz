@@ -289,7 +289,7 @@ func main() {
 					out_3, _ := json.Marshal(trace.Results["StreamDataReassembly"])
 					out_1, _ := json.Marshal(trace.ErrorCode)
 
-					fmt.Println("Host: ", host, "Data: ", string(out_3), " Seed:", source, "ErrorCode:", string(out_1))
+					fmt.Println("Generator:", gname, "Host: ", host, "Data: ", string(out_3), " Seed:", source, "ErrorCode:", string(out_1))
 					// 	out_2, _ := json.Marshal(trace.DiffCodes)
 					if len(out_1) != 0 {
 						traceFile.Write(out_1)
