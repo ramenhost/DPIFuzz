@@ -15,7 +15,7 @@ type ClosingAgent struct {
 	IdleTimeout  *time.Timer
 }
 
-func (a *ClosingAgent) Run(conn *Connection) {  // TODO: Observe incoming CC and AC
+func (a *ClosingAgent) Run(conn *Connection) { // TODO: Observe incoming CC and AC
 	a.Init("ClosingAgent", conn.OriginalDestinationCID)
 	a.conn = conn
 	a.IdleDuration = time.Duration(a.conn.TLSTPHandler.IdleTimeout) * time.Millisecond
