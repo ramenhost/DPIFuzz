@@ -1,0 +1,32 @@
+FROM golang:1.14-alpine
+RUN apk add --no-cache make cmake gcc g++ git openssl openssl-dev perl-test-harness-utils tcpdump libpcap libpcap-dev libbsd-dev perl-scope-guard perl-test-tcp python3 
+
+
+RUN mkdir -p /go/src/github.com/QUIC-Tracker/quic-tracker
+ADD . /go/src/github.com/QUIC-Tracker/quic-tracker 
+WORKDIR /go/src/github.com/QUIC-Tracker/quic-tracker
+ENV GOPATH /go
+RUN go get -v || true
+WORKDIR /go/src/github.com/mpiraux/pigotls
+RUN make
+WORKDIR /go/src/github.com/mpiraux/ls-qpack-go
+RUN make
+WORKDIR /go/src/github.com/QUIC-Tracker/quic-tracker
+RUN go build -o /fuzzer_runner bin/fuzzer/fuzzer_runner.go && \
+    go build -o /differential_fuzzer bin/fuzzer/modular_differential_fuzzer.go
+
+# CMD ["/differential_fuzzer", "-h"]
+RUN apk --update add --no-cache openssh bash \
+  && sed -i s/#PermitRootLogin.*/PermitRootLogin\ yes/ /etc/ssh/sshd_config \
+  && echo "root:root" | chpasswd \
+  && rm -rf /var/cache/apk/* \
+  && sed -ie 's/#Port 22/Port 22/g' /etc/ssh/sshd_config \
+  && sed -ri 's/#HostKey \/etc\/ssh\/ssh_host_key/HostKey \/etc\/ssh\/ssh_host_key/g' /etc/ssh/sshd_config \
+  && sed -ir 's/#HostKey \/etc\/ssh\/ssh_host_rsa_key/HostKey \/etc\/ssh\/ssh_host_rsa_key/g' /etc/ssh/sshd_config \
+  && sed -ir 's/#HostKey \/etc\/ssh\/ssh_host_dsa_key/HostKey \/etc\/ssh\/ssh_host_dsa_key/g' /etc/ssh/sshd_config \
+  && sed -ir 's/#HostKey \/etc\/ssh\/ssh_host_ecdsa_key/HostKey \/etc\/ssh\/ssh_host_ecdsa_key/g' /etc/ssh/sshd_config \
+  && sed -ir 's/#HostKey \/etc\/ssh\/ssh_host_ed25519_key/HostKey \/etc\/ssh\/ssh_host_ed25519_key/g' /etc/ssh/sshd_config \
+  && /usr/bin/ssh-keygen -A \
+  && ssh-keygen -t rsa -b 4096 -f  /etc/ssh/ssh_host_key
+EXPOSE 22
+CMD ["/usr/sbin/sshd","-D"]
