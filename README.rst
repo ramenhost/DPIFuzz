@@ -43,34 +43,49 @@ The trace files generated for each execution of the fuzzer with each client are 
 Build Instructions
 ------------------
 
-Run these commands
+* **Running DPIFuzz as a docker container**
 
-::
+  Install docker and then do the following:
+  ::
 
-    sudo apt-get install -y tcpdump
-    sudo apt-get install -y libpcap-dev
-    sudo apt-get install faketime libscope-guard-perl libtest-tcp-perl
-    sudo apt-get install make
-    sudo apt-get install cmake
-    sudo apt-get install build-essential
-    sudo apt-get install pkg-config
-    sudo apt-get install libssl-dev
+      docker build -f Dockerfile -t dpifuzz:lastest .
+      docker container run --network host -it dpifuzz &
+      docker container ls #to get the id of the container
+      docker exec -it <container-id> /bin/sh
+    
+  NOTE: The docker container is run in the host network mode. As a consequence, the container network is not isolated from the host network thereby allowing      communication with servers that might be running on different ports of the host machine using the 127.0.0.1 address in the container. The networking options  should be altered depending on the use case.
 
-Additionally, you should have Go >1.9 and openssl 1.1.1 installed before starting.
+* **For a local build** 
 
-Follow this with:
+  First run these commands
 
-::
+  ::
 
-    go get -u github.com/QUIC-Tracker/quic-tracker  # This will fail because of the missing dependencies that should be build using the 4 lines below
-    cd $GOPATH/src/github.com/mpiraux/pigotls
-    make
-    cd $GOPATH/src/github.com/mpiraux/ls-qpack-go
-    make
-    cd $GOPATH/src/github.com/QUIC-Tracker
-    rm -rf quic-tracker
-    git clone https://github.com/piano-man/DPIFuzz.git
-    mv ./DPIFuzz ./quic-tracker
+      sudo apt-get install -y tcpdump
+      sudo apt-get install -y libpcap-dev
+      sudo apt-get install faketime libscope-guard-perl libtest-tcp-perl
+      sudo apt-get install make
+      sudo apt-get install cmake
+      sudo apt-get install build-essential
+      sudo apt-get install pkg-config
+      sudo apt-get install libssl-dev
+
+  Additionally, you should have Go >1.9 and openssl 1.1.1 installed before starting.
+
+  Follow this with:
+
+  ::
+
+      go get -u github.com/QUIC-Tracker/quic-tracker  # This will fail because of the missing dependencies that should be build using the 4 lines below
+      cd $GOPATH/src/github.com/mpiraux/pigotls
+      make
+      cd $GOPATH/src/github.com/mpiraux/ls-qpack-go
+      make
+      cd $GOPATH/src/github.com/QUIC-Tracker
+      rm -rf quic-tracker
+      git clone https://github.com/piano-man/DPIFuzz.git
+      mv ./DPIFuzz ./quic-tracker
+      cd $GOPATH/src/github.com/QUIC-Tracker/quic-tracker
 
 
 Execution Commands
@@ -90,7 +105,7 @@ Sample Commands for reference:
     cd bin/fuzzer
     go run modular_differential_fuzzer.go -hosts hosts.txt -max-instances <integer value> -iterations <integer value> -parallel=<true/false> -generator   <stream_reassembly/flow_control_stream_reassembly/overlapping_offset> -debug=<true/false> -trace-directory <directory name where you want to store the trace files> -fuzz 1
 
-NOTE: Please make sure that the trace file directory exists before running the command
+NOTE: Please make sure that the trace file directory exists before running the command. When run in the container mode, the trace files will be created under the /tmp directory, irrespective of the value of the ``trace-directory`` command line flag.
     
 * **fuzzer_runner.go** - 
 ::
