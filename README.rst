@@ -47,7 +47,8 @@ Build Instructions
 
   Install docker and then do the following:
   ::
-
+      git clone https://github.com/piano-man/DPIFuzz.git
+      cd DPIFuzz
       docker build -f Dockerfile -t dpifuzz:lastest .
       docker container run --network host -it dpifuzz &
       docker container ls #to get the id of the container
