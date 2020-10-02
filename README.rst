@@ -117,7 +117,7 @@ NOTE: Please make sure that the trace file directory exists before running the c
     
 Publications
 --------------
-The corresponding research paper(https://publications.cispa.saarland/3220/1/DPIFuzz.pdf) will be published in the **36th Annual Computer Security Applications Conference (ACSAC 2020)**. If you use DPIFuzz in your paper/project, please do remember to cite this work:
+The corresponding `research paper`_  will be published in the **36th Annual Computer Security Applications Conference (ACSAC 2020)**. If you use DPIFuzz in your paper/project, please do remember to cite this work:
 
 ::
 
@@ -132,3 +132,4 @@ The corresponding research paper(https://publications.cispa.saarland/3220/1/DPIF
   booktitle = {36th Annual Computer Security Applications Conference (ACSAC), 2020},
   }
 
+.. _research paper: https://publications.cispa.saarland/3220/1/DPIFuzz.pdf
