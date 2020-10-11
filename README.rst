@@ -1,8 +1,28 @@
 DPIFuzz
 =====================
+ 
 DPIFuzz is a differential fuzzing framework which has been designed with the intent of uncovering DPI Elusion strategies for QUIC. The differential fuzzing framework can be extended to compare various aspects of QUIC server implementations in addition to the demonstrated purpose of uncovering DPI elusion strategies. The fuzzer that powers DPIFuzz can also be run in a non-differential mode to independently test server-side implementations of QUIC as well.
 
 The framework uses the high level QUIC API provided by QUIC-Tracker(a test suite which comprises a minimal Go implementation of QUIC). It is currently draft-27 and TLS-1.3 compatible; however, the highly modular architecture allows it to be readily extended to support all the corresponding versions of QUIC drafts as well.
+
+
+
+Publication
+--------------
+The corresponding `research paper`_  will be published in the **36th Annual Computer Security Applications Conference (ACSAC 2020)**. If you use DPIFuzz in your paper/project, please do remember to cite this work:
+
+::
+
+  @inproceedings{dpifuzz,
+  author = {Gaganjeet Singh Reen and Christian Rossow},
+  title = {DPIFuzz: A Differential Fuzzing Framework to Detect DPI Elusion Strategies for QUIC},
+  year = {2020},
+  isbn = {978-1-4503-8858-0/20/12},
+  publisher = {Association for Computing Machinery},
+  url = {https://doi.org/10.1145/3427228.3427662},
+  doi = {10.1145/3359789.3359848},
+  booktitle = {36th Annual Computer Security Applications Conference (ACSAC), 2020},
+  }
 
 Overview of the repository
 --------------------------
@@ -114,22 +134,5 @@ NOTE: Please make sure that the trace file directory exists before running the c
     cd bin/fuzzer
     go run fuzzer_runner.go -host <host IP:port> -generator <stream_reassembly/flow_control_stream_reassembly/overlapping_offset> -debug=<true/false> -alpn <hq/h3> -fuzz 1 -source <seed value>
     
-    
-Publications
---------------
-The corresponding `research paper`_  will be published in the **36th Annual Computer Security Applications Conference (ACSAC 2020)**. If you use DPIFuzz in your paper/project, please do remember to cite this work:
-
-::
-
-  @inproceedings{dpifuzz,
-  author = {Gaganjeet Singh Reen and Christian Rossow},
-  title = {DPIFuzz: A Differential Fuzzing Framework to Detect DPI Elusion Strategies for QUIC},
-  year = {2020},
-  isbn = {978-1-4503-8858-0/20/12},
-  publisher = {Association for Computing Machinery},
-  url = {https://doi.org/10.1145/3427228.3427662},
-  doi = {10.1145/3359789.3359848},
-  booktitle = {36th Annual Computer Security Applications Conference (ACSAC), 2020},
-  }
 
 .. _research paper: https://publications.cispa.saarland/3220/1/DPIFuzz.pdf
