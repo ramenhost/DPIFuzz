@@ -13,7 +13,7 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
-	"postCreateCommand": "go get -v || true; cd /go/src/github.com/mpiraux/pigotls; make; cd /go/src/github.com/mpiraux/ls-qpack-go; make",
+	"postCreateCommand": "go get -v || true; cd /go/src/github.com/mpiraux/pigotls; make; cd /go/src/github.com/mpiraux/ls-qpack-go; go mod download github.com/davecgh/go-spew; make",
 
 	// Configure tool-specific properties.
 	"customizations": {

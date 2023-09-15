@@ -1,28 +1,10 @@
-FROM golang:1.14-alpine
-RUN apk add --no-cache make cmake vim gcc g++ git openssl openssl-dev \
-    perl-test-harness-utils tcpdump libpcap libpcap-dev libbsd-dev perl-scope-guard perl-test-tcp \
-    python3 sudo openssh-client bash tmux
+FROM mcr.microsoft.com/vscode/devcontainers/go:0.203.0-1.16
 
-ARG USERNAME=vscode
-ARG USER_UID=1000
-ARG USER_GID=1000
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add - && \
+    echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list && \
+    apt update && apt install -y cmake vim libssl-dev \
+    libtest-harness-perl tcpdump libpcap0.8 libpcap-dev libbsd-dev libscope-guard-perl libtest-tcp-perl \
+    openssh-client tmux
 
-# Setup user
-RUN adduser $USERNAME -s /bin/sh -D -u $USER_UID $USER_GID && \
-    mkdir -p /etc/sudoers.d && \
-    echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME && \
-    chmod 0440 /etc/sudoers.d/$USERNAME
-
-ENV GOPATH /go
-USER $USERNAME
-WORKDIR /tmp
-RUN GO111MODULE=on go get golang.org/x/tools/gopls@v0.7.5
-
+USER vscode
 RUN mkdir -p /go/src/github.com/QUIC-Tracker/quic-tracker
-
-# Setup shell
-ENV ENV="/home/$USERNAME/.ashrc" \
-    EDITOR=vi \
-    LANG=en_US.UTF-8
-RUN echo "exec `which bash`" > "/home/$USERNAME/.ashrc"
-USER root
