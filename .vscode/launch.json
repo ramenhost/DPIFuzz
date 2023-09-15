@@ -1,0 +1,54 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Fuzzer Runner",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/bin/fuzzer/fuzzer_runner.go",
+            "args": ["-host", "${input:host}", "-generator", "${input:generator}", "-debug=true", "-alpn", "hq", "-fuzz", "1", "source", "${input:source}"]
+        },
+        {
+            "name": "Differential Fuzzer",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/bin/fuzzer/modular_differential_fuzzer.go",
+            "args": ["-hosts", "hosts.txt", "-max-instances", "8", "-iterations", "200", "-parallel", "true", "-generator", "${input:generator}", "-debug=true", "-trace-directory", "/tmp", "-fuzz", "1"]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "host",
+            "type": "pickString",
+            "description": "QUIC host",
+            "options": [
+                "192.168.56.104:4433",
+                "192.168.56.104:4434",
+                "192.168.56.104:4435"
+            ],
+            "default": "192.168.56.104:4433"
+        },
+        {
+            "id": "generator",
+            "type": "pickString",
+            "description": "generator",
+            "options": [
+                "stream_reassembly",
+                "flow_control_stream_reassembly",
+                "overlapping_offset"
+            ],
+            "default": "overlapping_offset"
+        },
+        {
+            "id": "source",
+            "type": "promptString",
+            "description": "seed",
+            "default": ""
+        }
+      ]
+}
