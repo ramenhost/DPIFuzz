@@ -1,0 +1,52 @@
+diff --git a/examples/echo.c b/examples/echo.c
+index 3c36893..f53e0f7 100644
+--- a/examples/echo.c
++++ b/examples/echo.c
+@@ -134,27 +134,33 @@ static void on_receive(quicly_stream_t *stream, size_t off, const void *src, siz
+         return;
+ 
+     /* obtain contiguous bytes from the receive buffer */
+-    ptls_iovec_t input = quicly_streambuf_ingress_get(stream);
++    //ptls_iovec_t input = quicly_streambuf_ingress_get(stream);
+ 
+     if (is_server()) {
+         /* server: echo back to the client */
+-        if (quicly_sendstate_is_open(&stream->sendstate) && (input.len > 0)) {
+-            quicly_streambuf_egress_write(stream, input.base, input.len);
++        if (quicly_sendstate_is_open(&stream->sendstate)) {
++            //quicly_streambuf_egress_write(stream, input.base, input.len);
+             /* shutdown the stream after echoing all data */
+-            if (quicly_recvstate_transfer_complete(&stream->recvstate))
+-                quicly_streambuf_egress_shutdown(stream);
++            if (quicly_recvstate_transfer_complete(&stream->recvstate)) {
++    		ptls_iovec_t input = quicly_streambuf_ingress_get(stream);
++		if(input.len > 0)
++		{
++            		quicly_streambuf_egress_write(stream, input.base, input.len);
++		}
++                quicly_streambuf_egress_shutdown(stream);    
++            }
+         }
+-    } else {
+-        /* client: print to stdout */
+-        fwrite(input.base, 1, input.len, stdout);
+-        fflush(stdout);
+-        /* initiate connection close after receiving all data */
+-        if (quicly_recvstate_transfer_complete(&stream->recvstate))
+-            quicly_close(stream->conn, 0, "");
+-    }
++    } //else {
++//        /* client: print to stdout */
++//       fwrite(input.base, 1, input.len, stdout);
++//        fflush(stdout);
++//        /* initiate connection close after receiving all data */
++//        if (quicly_recvstate_transfer_complete(&stream->recvstate))
++//            quicly_close(stream->conn, 0, "");
++//    }
+ 
+     /* remove used bytes from receive buffer */
+-    quicly_streambuf_ingress_shift(stream, input.len);
++    //quicly_streambuf_ingress_shift(stream, input.len);
+ }
+ 
+ static void process_msg(int is_client, quicly_conn_t **conns, struct msghdr *msg, size_t dgram_len)

@@ -4,7 +4,7 @@ RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add - && \
     echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list && \
     apt update && apt install -y cmake vim libssl-dev \
     libtest-harness-perl tcpdump libpcap0.8 libpcap-dev libbsd-dev libscope-guard-perl libtest-tcp-perl \
-    openssh-client tmux
+    openssh-client tmux python3 python3-pip zlib1g-dev
 
 USER vscode
 RUN mkdir -p /go/src/github.com/QUIC-Tracker/quic-tracker

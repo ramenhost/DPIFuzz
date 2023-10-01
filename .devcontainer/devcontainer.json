@@ -13,6 +13,7 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
+	"onCreateCommand": "pip3 install -r /go/src/github.com/QUIC-Tracker/quic-tracker/diff-fuzzing/evaluation/requirements.txt",
 	"postCreateCommand": "go get -v || true; cd /go/src/github.com/mpiraux/pigotls; make; cd /go/src/github.com/mpiraux/ls-qpack-go; go mod download github.com/davecgh/go-spew; make",
 
 	// Configure tool-specific properties.
@@ -24,7 +25,9 @@
 			"extensions": [
 				"golang.Go",
 				"GitHub.copilot",
-				"IBM.output-colorizer"
+				"IBM.output-colorizer",
+				"ms-toolsai.jupyter",
+				"ms-python.python"
 			]
 		}
 	},

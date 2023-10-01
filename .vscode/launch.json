@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/bin/fuzzer/fuzzer_runner.go",
-            "args": ["-host", "${input:host}", "-generator", "${input:generator}", "-debug=true", "-alpn", "hq", "-fuzz", "1", "source", "${input:source}"]
+            "args": ["-host", "${input:host}", "-generator", "${input:generator}", "-debug=true", "-alpn", "hq", "-fuzz", "1", "-source", "${input:source}"]
         },
         {
             "name": "Differential Fuzzer",
@@ -18,7 +18,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/bin/fuzzer/modular_differential_fuzzer.go",
-            "args": ["-hosts", "hosts.txt", "-max-instances", "8", "-iterations", "200", "-parallel", "true", "-generator", "${input:generator}", "-debug=true", "-trace-directory", "/tmp", "-fuzz", "1"]
+            "args": ["-hosts", "hosts.txt", "-max-instances", "2", "-iterations", "20", "-parallel", "true", "-generator", "${input:generator}", "-debug=true", "-fuzz", "1"]
         }
     ],
     "inputs": [
@@ -27,11 +27,11 @@
             "type": "pickString",
             "description": "QUIC host",
             "options": [
-                "192.168.56.104:4433",
-                "192.168.56.104:4434",
-                "192.168.56.104:4435"
+                "172.29.176.1:4433",
+                "172.29.176.1:4434",
+                "172.29.176.1:4435"
             ],
-            "default": "192.168.56.104:4433"
+            "default": "172.29.176.1:4433"
         },
         {
             "id": "generator",

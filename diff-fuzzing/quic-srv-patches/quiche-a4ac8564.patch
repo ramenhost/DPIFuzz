@@ -1,0 +1,201 @@
+diff --git a/quiche/examples/server.c b/quiche/examples/server.c
+index 73447a3b..b7f384e7 100644
+--- a/quiche/examples/server.c
++++ b/quiche/examples/server.c
+@@ -122,44 +122,44 @@ static void flush_egress(struct ev_loop *loop, struct conn_io *conn_io) {
+     ev_timer_again(loop, &conn_io->timer);
+ }
+ 
+-static void mint_token(const uint8_t *dcid, size_t dcid_len,
+-                       struct sockaddr_storage *addr, socklen_t addr_len,
+-                       uint8_t *token, size_t *token_len) {
+-    memcpy(token, "quiche", sizeof("quiche") - 1);
+-    memcpy(token + sizeof("quiche") - 1, addr, addr_len);
+-    memcpy(token + sizeof("quiche") - 1 + addr_len, dcid, dcid_len);
+-
+-    *token_len = sizeof("quiche") - 1 + addr_len + dcid_len;
+-}
+-
+-static bool validate_token(const uint8_t *token, size_t token_len,
+-                           struct sockaddr_storage *addr, socklen_t addr_len,
+-                           uint8_t *odcid, size_t *odcid_len) {
+-    if ((token_len < sizeof("quiche") - 1) ||
+-         memcmp(token, "quiche", sizeof("quiche") - 1)) {
+-        return false;
+-    }
+-
+-    token += sizeof("quiche") - 1;
+-    token_len -= sizeof("quiche") - 1;
+-
+-    if ((token_len < addr_len) || memcmp(token, addr, addr_len)) {
+-        return false;
+-    }
+-
+-    token += addr_len;
+-    token_len -= addr_len;
+-
+-    if (*odcid_len < token_len) {
+-        return false;
+-    }
+-
+-    memcpy(odcid, token, token_len);
+-    *odcid_len = token_len;
+-
+-    return true;
+-}
+-
++//static void mint_token(const uint8_t *dcid, size_t dcid_len,
++//                       struct sockaddr_storage *addr, socklen_t addr_len,
++//                       uint8_t *token, size_t *token_len) {
++//    memcpy(token, "quiche", sizeof("quiche") - 1);
++//    memcpy(token + sizeof("quiche") - 1, addr, addr_len);
++//    memcpy(token + sizeof("quiche") - 1 + addr_len, dcid, dcid_len);
++//
++//    *token_len = sizeof("quiche") - 1 + addr_len + dcid_len;
++//}
++
++//static bool validate_token(const uint8_t *token, size_t token_len,
++//                           struct sockaddr_storage *addr, socklen_t addr_len,
++//                           uint8_t *odcid, size_t *odcid_len) {
++//    if ((token_len < sizeof("quiche") - 1) ||
++//         memcmp(token, "quiche", sizeof("quiche") - 1)) {
++//        return false;
++//    }
++//
++//    token += sizeof("quiche") - 1;
++//    token_len -= sizeof("quiche") - 1;
++//
++//    if ((token_len < addr_len) || memcmp(token, addr, addr_len)) {
++//        return false;
++//    }
++//
++//    token += addr_len;
++//    token_len -= addr_len;
++//
++//    if (*odcid_len < token_len) {
++//        return false;
++//    }
++//
++//    memcpy(odcid, token, token_len);
++//    *odcid_len = token_len;
++//
++//    return true;
++//}
++/*
+ static uint8_t *gen_cid(uint8_t *cid, size_t cid_len) {
+     int rng = open("/dev/urandom", O_RDONLY);
+     if (rng < 0) {
+@@ -175,7 +175,7 @@ static uint8_t *gen_cid(uint8_t *cid, size_t cid_len) {
+ 
+     return cid;
+ }
+-
++*/
+ static struct conn_io *create_conn(uint8_t *scid, size_t scid_len,
+                                    uint8_t *odcid, size_t odcid_len,
+                                    struct sockaddr *local_addr,
+@@ -226,7 +226,15 @@ static struct conn_io *create_conn(uint8_t *scid, size_t scid_len,
+ 
+ static void recv_cb(EV_P_ ev_io *w, int revents) {
+     struct conn_io *tmp, *conn_io = NULL;
+-
++    //int arr[100];
++    //memset(arr,0,sizeof(arr));
++    int curr[100];
++    memset(curr,0,sizeof(curr));
++    uint8_t *table[100];
++    for(int i = 0 ; i < 100 ; i++)
++    {
++	    table[i] = (uint8_t*) malloc(10000*sizeof(uint8_t));
++    }
+     static uint8_t buf[65535];
+     static uint8_t out[MAX_DATAGRAM_SIZE];
+ 
+@@ -299,7 +307,7 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
+                 fprintf(stderr, "sent %zd bytes\n", sent);
+                 continue;
+             }
+-
++/*
+             if (token_len == 0) {
+                 fprintf(stderr, "stateless retry\n");
+ 
+@@ -342,7 +350,7 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
+                 fprintf(stderr, "invalid address validation token\n");
+                 continue;
+             }
+-
++*/
+             conn_io = create_conn(dcid, dcid_len, odcid, odcid_len,
+                                   conns->local_addr, conns->local_addr_len,
+                                   &peer_addr, peer_addr_len);
+@@ -381,14 +389,41 @@ static void recv_cb(EV_P_ ev_io *w, int revents) {
+                 ssize_t recv_len = quiche_conn_stream_recv(conn_io->conn, s,
+                                                            buf, sizeof(buf),
+                                                            &fin);
+-                if (recv_len < 0) {
++		if (recv_len < 0) {
+                     break;
+                 }
++		int id = (int)s;
++			//arr[id] += (int)recv_len;
++			int end = curr[id];
++			//if(recv_len == arr[id])
++			//{
++			//	table[id] = (uint8_t *)malloc(sizeof(uint8_t)*recv_len);
++			//}
++			//else
++			//{
++			//	table[id] = (uint8_t *)realloc(table[id],sizeof(uint8_t)*arr[id]);
++			//}
++			for(int i = 0 ; i < recv_len ; i++)
++			{
++				table[id][i+end] = buf[i];	
++		}
++			curr[id] += recv_len;
++                fprintf(stderr, "****************************************************************\nReceived Length %zd\n", recv_len);
++		if(s == 16)
++		{
++			fprintf(stderr, "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\nPayload: %s\n", buf);
++		}
++		//fprintf(stderr, "Payload: %s\n", buf);
++		//if (recv_len < 0) {
++                //    break;
++                //}
+ 
+                 if (fin) {
+-                    static const char *resp = "byez\n";
+-                    quiche_conn_stream_send(conn_io->conn, s, (uint8_t *) resp,
+-                                            5, true);
++			fprintf(stderr, "##########################################################\nStream %" PRIu64" is echoed\n", s);
++                    //const uint8_t *resp = buf;
++		    fprintf(stderr, "--------------------------------------------------------------\nLength echoed%zd\n", recv_len);
++                    quiche_conn_stream_send(conn_io->conn, s, table[(int)s],
++                                            curr[(int)s], true);
+                 }
+             }
+ 
+@@ -491,14 +526,17 @@ int main(int argc, char *argv[]) {
+ 
+     quiche_config_set_application_protos(config,
+         (uint8_t *) "\x0ahq-interop\x05hq-29\x05hq-28\x05hq-27\x08http/0.9", 38);
+-
+-    quiche_config_set_max_idle_timeout(config, 5000);
++    
++    quiche_config_set_max_idle_timeout(config, 60000);
+     quiche_config_set_max_recv_udp_payload_size(config, MAX_DATAGRAM_SIZE);
+     quiche_config_set_max_send_udp_payload_size(config, MAX_DATAGRAM_SIZE);
+-    quiche_config_set_initial_max_data(config, 10000000);
+-    quiche_config_set_initial_max_stream_data_bidi_local(config, 1000000);
+-    quiche_config_set_initial_max_stream_data_bidi_remote(config, 1000000);
+-    quiche_config_set_initial_max_streams_bidi(config, 100);
++    quiche_config_set_initial_max_data(config, 1048576);
++    quiche_config_set_initial_max_stream_data_bidi_local(config, 66560);
++    quiche_config_set_initial_max_stream_data_bidi_remote(config, 66560);
++    quiche_config_set_initial_max_stream_data_uni(config, 66560);
++    quiche_config_set_initial_max_streams_bidi(config, 2048);
++    quiche_config_set_initial_max_streams_uni(config, 2048);
++    quiche_config_set_ack_delay_exponent(config, 3);
+     quiche_config_set_cc_algorithm(config, QUICHE_CC_RENO);
+ 
+     struct connections c;
