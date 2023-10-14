@@ -18,7 +18,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/bin/fuzzer/modular_differential_fuzzer.go",
-            "args": ["-hosts", "hosts.txt", "-max-instances", "2", "-iterations", "20", "-parallel", "true", "-generator", "${input:generator}", "-debug=true", "-fuzz", "1"]
+            "args": ["-hosts", "hosts.txt", "-max-instances", "2", "-iterations", "${input:iterations}", "-parallel", "true", "-generator", "${input:generator}", "-debug=true", "-fuzz", "1"]
         }
     ],
     "inputs": [
@@ -43,6 +43,12 @@
                 "overlapping_offset"
             ],
             "default": "overlapping_offset"
+        },
+        {
+            "id": "iterations",
+            "type": "promptString",
+            "description": "iterations",
+            "default": "20"
         },
         {
             "id": "source",
