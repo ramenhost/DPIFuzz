@@ -11,7 +11,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+
 	qt "github.com/QUIC-Tracker/quic-tracker"
+
 	// "github.com/QUIC-Tracker/quic-tracker/fuzzer"
 	"io"
 	"io/ioutil"
@@ -19,6 +21,7 @@ import (
 	"os/exec"
 	p "path"
 	"runtime"
+
 	//"sort"
 	"strconv"
 	"strings"
@@ -475,8 +478,10 @@ func getFuzzerResultsSequential(generatorName *string, generatorList []string, h
 		}
 	}
 	//comparing hash values
-	res := ""
+	resp := ""
 	for key, val := range m {
+		res := ""
+		res_diff := false
 		res += key
 		res += "\t"
 		seed, success := seedMap.Get(key)
@@ -490,15 +495,18 @@ func getFuzzerResultsSequential(generatorName *string, generatorList []string, h
 			res += "--"
 			for j := 0; j < l; j++ {
 				if bytes.Compare(val[i].hash, val[j].hash) != 0 {
+					res_diff = true
 					res += val[j].host
 					res += ","
 				}
 			}
 			res += "\t\t"
 		}
-		res += "\n"
+		if res_diff == true {
+			resp += res + "\n"
+		}
 	}
-	return res
+	return resp
 }
 
 // func GetCrashTrace(scenario scenarii.Scenario, host string) *qt.Trace {
